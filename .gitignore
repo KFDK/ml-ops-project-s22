@@ -87,4 +87,4 @@ target/
 
 
 # exclude pt datasets 
-.pt
+*.pt
