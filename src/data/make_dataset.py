@@ -3,7 +3,7 @@ import click
 import logging
 from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
-import torch 
+import torch
 from transformers import AutoTokenizer
 from torch.utils.data import DataLoader
 import pandas as pd
@@ -27,70 +27,80 @@ class TorchDataset(torch.utils.data.Dataset):
         items = {key: val[idx_from:idx_to] for key, val in self.encodings.items()}
         return TorchDataset(items, self.labels[idx_from:idx_to])
 
-def read_data(input_filepath): 
+
+def read_data(input_filepath):
     # Read data from raw. returns as pandas dataframe
-    fake=pd.read_csv(input_filepath+'/fake.csv')
-    true=pd.read_csv(input_filepath+'/true.csv')
-    fake['target']=0 # Fake
-    true['target']=1 # True
-    df=pd.concat([true,fake])
+    fake = pd.read_csv(input_filepath + "/fake.csv")
+    true = pd.read_csv(input_filepath + "/true.csv")
+    fake["target"] = 0  # Fake
+    true["target"] = 1  # True
+    df = pd.concat([true, fake])
     return df
+
 
 def split_data(df):
     # split pandas dataframe
-    df_train,df_test=train_test_split(df,test_size=0.4,random_state=1)
-    df_test,df_eval=train_test_split(df_test,test_size=0.25,random_state=1)
+    df_train, df_test = train_test_split(df, test_size=0.4, random_state=1)
+    df_test, df_eval = train_test_split(df_test, test_size=0.25, random_state=1)
     return df_train, df_test, df_eval
+
 
 def my_tokenize(X):
     # Tokenize with electra. Input list of texts
-    electra_huggingface='google/electra-small-discriminator'
+    electra_huggingface = "google/electra-small-discriminator"
     tokenizer = AutoTokenizer.from_pretrained(electra_huggingface)
     tokenizer.padding_side = "left"
     encodings = tokenizer(X, truncation=True, padding=True)
-    
-    return encodings # tuple with input_ids and masks
 
-def convert_to_torchdataset(train_encodings, test_encodings, eval_encodings, y_train, y_test, y_eval):
+    return encodings  # tuple with input_ids and masks
+
+
+def convert_to_torchdataset(
+    train_encodings, test_encodings, eval_encodings, y_train, y_test, y_eval
+):
     # Convert to PyTorch Datasets class
     train_set = TorchDataset(train_encodings, y_train.to_list())
     test_set = TorchDataset(test_encodings, y_test.to_list())
     eval_set = TorchDataset(eval_encodings, y_eval.to_list())
     return train_set, test_set, eval_set
 
-def save_dataloader_as_torchdataset(output_filepath,train_set, test_set,eval_set):
+
+def save_dataloader_as_torchdataset(output_filepath, train_set, test_set, eval_set):
     # saves data
-    torch.save(train_set,output_filepath + '/train_dataloader.pt')
-    torch.save(test_set, output_filepath'(test_dataloader.pt')
-    torch.save(eval_set, output_filepath'/eval_dataloader.pt')
+    torch.save(train_set, output_filepath + "/train_dataset.pt")
+    torch.save(test_set, output_filepath + "/test_dataset.pt")
+    torch.save(eval_set, output_filepath + "/eval_dataset.pt")
+
 
 @click.command()
-@click.argument('input_filepath', type=click.Path(exists=True))
-@click.argument('output_filepath', type=click.Path())
+@click.argument("input_filepath", type=click.Path(exists=True))
+@click.argument("output_filepath", type=click.Path())
 def main(input_filepath, output_filepath):
-    """ Runs data processing scripts to turn raw data from (../raw) into
-        cleaned data ready to be analyzed (saved in ../processed).
+    """Runs data processing scripts to turn raw data from (../raw) into
+    cleaned data ready to be analyzed (saved in ../processed).
     """
     logger = logging.getLogger(__name__)
-    logger.info('making final data set from raw data')
+    logger.info("making final data set from raw data")
 
-    df=read_data(input_filepath)
+    df = read_data(input_filepath)
     df_train, df_test, df_eval = split_data(df)
 
-    train_encodings=my_tokenize(df_train['text'].to_list())
-    test_encodings=my_tokenize(df_test['text'].to_list())
-    eval_encodings=my_tokenize(df_eval['text'].to_list())
+    train_encodings = my_tokenize(df_train["text"].to_list())
+    test_encodings = my_tokenize(df_test["text"].to_list())
+    eval_encodings = my_tokenize(df_eval["text"].to_list())
 
-    y_train = df_train['target']
-    y_test = df_test['target']
-    y_eval = df_eval['target']
+    y_train = df_train["target"]
+    y_test = df_test["target"]
+    y_eval = df_eval["target"]
 
-    train_set, test_set, eval_set=convert_to_torchdataset(train_encodings, test_encodings, eval_encodings, y_train, y_test, y_eval)
-    save_dataloader_as_torchdataset(output_filepath, train_set, test_set,eval_set)
+    train_set, test_set, eval_set = convert_to_torchdataset(
+        train_encodings, test_encodings, eval_encodings, y_train, y_test, y_eval
+    )
+    save_dataloader_as_torchdataset(output_filepath, train_set, test_set, eval_set)
 
 
-if __name__ == '__main__':
-    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+if __name__ == "__main__":
+    log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(level=logging.INFO, format=log_fmt)
 
     # not used in this stub but often useful for finding various files
