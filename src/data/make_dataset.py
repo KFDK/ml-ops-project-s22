@@ -30,8 +30,8 @@ class TorchDataset(torch.utils.data.Dataset):
 
 def read_data(input_filepath):
     # Read data from raw. returns as pandas dataframe
-    fake = pd.read_csv(input_filepath + "/fake.csv")
-    true = pd.read_csv(input_filepath + "/true.csv")
+    fake = pd.read_csv(input_filepath + "/Fake.csv")
+    true = pd.read_csv(input_filepath + "/True.csv")
     fake["target"] = 0  # Fake
     true["target"] = 1  # True
     df = pd.concat([true, fake])
