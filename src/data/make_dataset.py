@@ -1,3 +1,9 @@
+
+""" 
+This script converts raw data into tokenized text using google electra. 
+It returns and saves a torch dataset object to ./data/processed/
+"""
+
 # -*- coding: utf-8 -*-
 import click
 import logging
@@ -40,7 +46,7 @@ class TorchDataset(torch.utils.data.Dataset):
 
 
 def read_data(input_filepath):
-    # Read data from raw. returns as pandas dataframe
+    """ Read data from raw. returns as pandas dataframe """
     fake = pd.read_csv(input_filepath + "/Fake.csv")
     true = pd.read_csv(input_filepath + "/True.csv")
     fake["target"] = 0  # Fake
@@ -50,14 +56,14 @@ def read_data(input_filepath):
 
 
 def split_data(df):
-    # split pandas dataframe
+    """ split pandas dataframe """
     df_train, df_test = train_test_split(df, test_size=0.4, random_state=1)
     df_test, df_eval = train_test_split(df_test, test_size=0.25, random_state=1)
     return df_train, df_test, df_eval
 
 
 def my_tokenize(X):
-    # Tokenize with electra. Input list of texts
+    """ Tokenize with electra. Input list of texts """
     electra_huggingface = "google/electra-small-discriminator"
     tokenizer = AutoTokenizer.from_pretrained(electra_huggingface)
     tokenizer.padding_side = "left"
@@ -67,9 +73,10 @@ def my_tokenize(X):
 
 
 def convert_to_torchdataset(
-    train_encodings, test_encodings, eval_encodings, y_train, y_test, y_eval
-):
-    # Convert to PyTorch Datasets class
+        train_encodings, test_encodings, 
+        eval_encodings, y_train, y_test, y_eval
+        ):
+    """ Convert to PyTorch Datasets class """
     train_set = TorchDataset(train_encodings, y_train.to_list())
     test_set = TorchDataset(test_encodings, y_test.to_list())
     eval_set = TorchDataset(eval_encodings, y_eval.to_list())
@@ -77,7 +84,7 @@ def convert_to_torchdataset(
 
 
 def save_dataloader_as_torchdataset(output_filepath, train_set, test_set, eval_set):
-    # saves data
+    """ saves data """
     torch.save(train_set, output_filepath + "/train_dataset.pt")
     torch.save(test_set, output_filepath + "/test_dataset.pt")
     torch.save(eval_set, output_filepath + "/eval_dataset.pt")
