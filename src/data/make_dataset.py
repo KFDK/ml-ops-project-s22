@@ -9,6 +9,27 @@ from torch.utils.data import DataLoader
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+# Configs
+from hydra import compose, initialize
+from omegaconf import OmegaConf
+
+
+
+# *************************************
+# ********* Hyperparameters ***********
+# *************************************
+
+initialize(config_path="../../configs/", job_name="model")
+cfg = compose(config_name="makedata.yaml")
+logger.info(f"configuration: \n {OmegaConf.to_yaml(cfg)}")
+configs = cfg["hyperparameters"]
+
+# Hyperparameters extracted
+input_filepath = configs["input_filepath"]
+output_filepath = configs["output_filepath"]
+
+
+
 # Torch Dataset Object
 class TorchDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels):
@@ -72,9 +93,9 @@ def save_dataloader_as_torchdataset(output_filepath, train_set, test_set, eval_s
     torch.save(eval_set, output_filepath + "/eval_dataset.pt")
 
 
-@click.command()
-@click.argument("input_filepath", type=click.Path(exists=True))
-@click.argument("output_filepath", type=click.Path())
+#@click.command()
+#@click.argument("input_filepath", type=click.Path(exists=True))
+#@click.argument("output_filepath", type=click.Path())
 def main(input_filepath, output_filepath):
     """Runs data processing scripts to turn raw data from (../raw) into
     cleaned data ready to be analyzed (saved in ../processed).
