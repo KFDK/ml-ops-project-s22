@@ -1,13 +1,6 @@
 # Misc
 #from select import EPOLLEXCLUSIVE
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-sns.set_theme()
-
-import random
 from tqdm.auto import tqdm
 from collections import defaultdict
 
@@ -183,8 +176,6 @@ def train_new(model, train_dataset, eval_dataset,EPOCHS):
 #     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
 #     train(model, train_dataset, eval_dataset)
 
-
-
 #Init hyperparameters
 
 config_path="./configs/"
@@ -211,11 +202,10 @@ if __name__ == "__main__":
 
     optimizer = AdamW(
         model.parameters(), lr=learning_rate, correct_bias=False, no_deprecation_warning=True
-    )
+        )
     total_steps = len(train_dataloader) * EPOCHS
     scheduler = get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=0, num_training_steps=total_steps
-    )
+        )
     loss_fn = nn.CrossEntropyLoss().to(device)
-
     train_new(model, train_dataset, eval_dataset,EPOCHS)
