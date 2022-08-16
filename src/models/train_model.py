@@ -1,5 +1,5 @@
 # Misc
-from select import EPOLLEXCLUSIVE
+#from select import EPOLLEXCLUSIVE
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -192,7 +192,7 @@ configs = OmegaConf.load(config_path+'train.yaml')
 
 # Hyperparameters extracted
 learning_rate  = configs.hyperparameters.learning_rate
-EPOCHS = configs.hyperparameters.epoch
+EPOCHS = configs.hyperparameters.epochs
 batch = configs.hyperparameters.batch_size
 
 
