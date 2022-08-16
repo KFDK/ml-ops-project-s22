@@ -13,22 +13,12 @@ from sklearn.model_selection import train_test_split
 from hydra import compose, initialize
 from omegaconf import OmegaConf
 
-
-
-# *************************************
-# ********* Hyperparameters ***********
-# *************************************
-
-initialize(config_path="../../configs/", job_name="model")
-cfg = compose(config_name="makedata.yaml")
-logger.info(f"configuration: \n {OmegaConf.to_yaml(cfg)}")
-configs = cfg["hyperparameters"]
+config_path="./configs/"
+configs = OmegaConf.load(config_path+'makedata.yaml')
 
 # Hyperparameters extracted
-input_filepath = configs["input_filepath"]
-output_filepath = configs["output_filepath"]
-
-
+input_filepath  = configs.hyperparameters.input_filepath
+output_filepath = configs.hyperparameters.output_filepath
 
 # Torch Dataset Object
 class TorchDataset(torch.utils.data.Dataset):
@@ -71,7 +61,7 @@ def my_tokenize(X):
     electra_huggingface = "google/electra-small-discriminator"
     tokenizer = AutoTokenizer.from_pretrained(electra_huggingface)
     tokenizer.padding_side = "left"
-    encodings = tokenizer(X, truncation=True, padding=True)
+    encodings = tokenizer(X,  truncation=True, padding=True)
 
     return encodings  # tuple with input_ids and masks
 
@@ -131,4 +121,4 @@ if __name__ == "__main__":
     # load up the .env entries as environment variables
     load_dotenv(find_dotenv())
 
-    main()
+    main(input_filepath, output_filepath)
