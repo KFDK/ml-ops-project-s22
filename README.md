@@ -1,7 +1,7 @@
 ml-ops-project-s22
 ==============================
 
-This is a project project project
+This is a project project
 
 Project Organization
 ------------
