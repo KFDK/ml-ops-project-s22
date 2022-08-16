@@ -25,6 +25,8 @@ configs = OmegaConf.load(config_path+'makedata.yaml')
 # Hyperparameters extracted
 input_filepath  = configs.hyperparameters.input_filepath
 output_filepath = configs.hyperparameters.output_filepath
+small_test = configs.hyperparameters.small_test
+
 
 # Torch Dataset Object
 class TorchDataset(torch.utils.data.Dataset):
@@ -47,11 +49,19 @@ class TorchDataset(torch.utils.data.Dataset):
 
 def read_data(input_filepath):
     """ Read data from raw. returns as pandas dataframe """
-    fake = pd.read_csv(input_filepath + "/Fake.csv")
-    true = pd.read_csv(input_filepath + "/True.csv")
-    fake["target"] = 0  # Fake
-    true["target"] = 1  # True
-    df = pd.concat([true, fake])
+    if small_test:
+        fake = pd.read_csv(input_filepath + "/Fake.csv")[:50]
+        true = pd.read_csv(input_filepath + "/True.csv")[:50]
+        print('small test set enabled! size:' + str(len(fake)*2))
+        fake["target"] = 0  # Fake
+        true["target"] = 1  # True
+        df = pd.concat([true, fake])
+    else:
+        fake = pd.read_csv(input_filepath + "/Fake.csv")
+        true = pd.read_csv(input_filepath + "/True.csv")
+        fake["target"] = 0  # Fake
+        true["target"] = 1  # True
+        df = pd.concat([true, fake])
     return df
 
 
