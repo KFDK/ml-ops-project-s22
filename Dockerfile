@@ -1,5 +1,5 @@
 # Base image
-FROM python:3.7-slim
+FROM python:3.7.10-slim
 
 # install python 
 RUN apt update && \
@@ -12,7 +12,7 @@ COPY requirements.txt requirements.txt
 COPY setup.py setup.py
 COPY src/ src/
 COPY data/ data/
-#COPY configs/ configs/
+COPY configs/ configs/
 
 # Install ML_things and google.cloud storage
 RUN apt update
