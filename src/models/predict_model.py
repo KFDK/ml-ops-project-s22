@@ -6,31 +6,18 @@ config file: predict.yaml
 #from select import EPOLLEXCLUSIVE
 import numpy as np
 from collections import defaultdict
-from datetime import datetime
 
 # Sklearn
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.metrics import confusion_matrix
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 
 # deep learning / pytorch
 import torch
 from torch import nn, optim
-from transformers import (
-    AutoTokenizer,
-    AutoModelForPreTraining,
-    AdamW,
-    get_scheduler,
-    get_linear_schedule_with_warmup,
-    )
-import torch.nn.functional as F
+from transformers import ElectraModel
 from torch.utils.data import DataLoader
-import pdb
-from transformers import ElectraModel, TrainingArguments, Trainer, AutoTokenizer
-import torch
+import torch.nn.functional as F
 from torch import nn
 from omegaconf import OmegaConf
 
@@ -108,14 +95,20 @@ def get_predictions(model, data_loader):
 
 
 def load_model(ElectraClassifier,path,model_name):
+    """ Loads model from path from config file """
     model = ElectraClassifier()
     prams=torch.load(path+model_name)
     model.load_state_dict(prams)
     return model
 
 def get_classification_report(predections,true):
+    """ Prints classification report """
     print(classification_report(predections, true,digits=4))
 
+def get_confusion_matrix(predictions,true):
+    """ creates confussion matrix """
+    cm = confusion_matrix(predictions, true)
+    print(cm)
 
 
 if __name__ == "__main__":
@@ -125,6 +118,6 @@ if __name__ == "__main__":
     test_dataset = torch.load(data_output_filepath + "test_dataset.pt")
     test_dataloader = DataLoader(test_dataset, batch_size=2)
     predictions, prediction_probs, real_values = get_predictions(model, test_dataloader)
+    
     get_classification_report(predictions,real_values)
-    # print(prediction_probs)
-
+    get_confusion_matrix(predictions,real_values)
