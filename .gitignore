@@ -90,5 +90,7 @@ target/
 *.pt
 
 # saved model
-best_model_state.bin
 models/
+
+#notebooks
+notebooks/
