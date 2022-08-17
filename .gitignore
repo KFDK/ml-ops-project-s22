@@ -88,3 +88,6 @@ target/
 
 # exclude pt datasets 
 *.pt
+
+# saved model
+best_model_state.bin
