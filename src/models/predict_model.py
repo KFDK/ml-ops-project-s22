@@ -1,5 +1,6 @@
 """ 
-This does something cool
+This script loads a model and evalutes that model.
+config file: predict.yaml
 """
 # Misc
 #from select import EPOLLEXCLUSIVE
@@ -83,26 +84,27 @@ class TorchDataset(torch.utils.data.Dataset):
 
 
 def get_predictions(model, data_loader):
-  model = model.eval()
-  predictions = []
-  prediction_probs = []
-  real_values = []
-  with torch.no_grad():
-    for d in data_loader:
-      input_ids = d["input_ids"].to(device)
-      attention_mask = d["attention_mask"].to(device)
-      targets = d["labels"].to(device)
-      outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-      _, preds = torch.max(outputs, dim=1)
-      predictions.extend(preds)
-      prediction_probs.extend(outputs)
-      real_values.extend(targets)
+    """Computes predections and predection probabilities with input model and dateloader"""
+    model = model.eval()
+    predictions = []
+    prediction_probs = []
+    real_values = []
+    with torch.no_grad():
+        for d in data_loader:
+            input_ids = d["input_ids"].to(device)
+            attention_mask = d["attention_mask"].to(device)
+            targets = d["labels"].to(device)
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+            _, preds = torch.max(outputs, dim=1)
+            predictions.extend(preds)
+            prediction_probs.extend(outputs)
+            real_values.extend(targets)
 
-  predictions = torch.stack(predictions).cpu()
-  prediction_probs = torch.stack(prediction_probs).cpu()
-  real_values = torch.stack(real_values).cpu()
-  
-  return predictions, prediction_probs, real_values
+    predictions = torch.stack(predictions).cpu()
+    prediction_probs = torch.stack(prediction_probs).cpu()
+    real_values = torch.stack(real_values).cpu()
+
+    return predictions, prediction_probs, real_values
 
 
 def load_model(ElectraClassifier,path,model_name):
@@ -112,7 +114,6 @@ def load_model(ElectraClassifier,path,model_name):
     return model
 
 def get_classification_report(predections,true):
-    # y_pred=np.argmax(np.array(prediction_probs).mean(axis=-3),axis=1)
     print(classification_report(predections, true,digits=4))
 
 
