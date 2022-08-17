@@ -166,7 +166,7 @@ def train_new(model, train_dataset,train_dataloader, eval_dataset,EPOCHS):
         history["val_loss"].append(val_loss)
 
         if val_acc > best_accuracy:
-            torch.save(model.state_dict(), "models/model_"+dt+".bin")
+            torch.save(model.state_dict(), "models/model_"+dt+".pth")
             best_accuracy = val_acc
 
 
@@ -178,7 +178,6 @@ def train_new(model, train_dataset,train_dataloader, eval_dataset,EPOCHS):
 #     train(model, train_dataset, eval_dataset)
 
 #Init hyperparameters
-
 config_path="./configs/"
 configs = OmegaConf.load(config_path+'train.yaml')
 
@@ -186,8 +185,6 @@ configs = OmegaConf.load(config_path+'train.yaml')
 learning_rate  = configs.hyperparameters.learning_rate
 EPOCHS = configs.hyperparameters.epochs
 batch = configs.hyperparameters.batch_size
-
-
 
 
 if __name__ == "__main__":
