@@ -133,11 +133,11 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
 
 
 def save_model(model, model_name):
-    pdb.set_trace()
+    # pdb.set_trace()
     storage_client = storage.Client()
     bucket = storage_client.bucket("better-mldtu-aiplatform")
     blob = bucket.blob("models/" + model_name + ".pt")
-    with blob.open("wb") as f:
+    with blob.open("wb",ignore_flush=True) as f:
         torch.save(model, f)
 
 
