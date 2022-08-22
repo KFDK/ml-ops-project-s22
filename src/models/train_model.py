@@ -1,5 +1,5 @@
 # Misc
-#from select import EPOLLEXCLUSIVE
+# from select import EPOLLEXCLUSIVE
 import numpy as np
 from tqdm.auto import tqdm
 from collections import defaultdict
@@ -34,6 +34,7 @@ from torch import nn
 # Configs
 from hydra import compose, initialize
 from omegaconf import OmegaConf
+
 
 class TorchDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels):
@@ -141,11 +142,11 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
     return correct_predictions.double() / n_examples, np.mean(losses)
 
 
-def train_new(model, train_dataset,train_dataloader, eval_dataset,EPOCHS):
+def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
     history = defaultdict(list)
     best_accuracy = 0
     for epoch in tqdm(range(EPOCHS)):
-        print('starting train_epoch')
+        print("starting train_epoch")
         train_acc, train_loss = train_epoch(
             model,
             train_dataloader,
@@ -176,22 +177,21 @@ def train_new(model, train_dataset,train_dataloader, eval_dataset,EPOCHS):
 #     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
 #     train(model, train_dataset, eval_dataset)
 
-#Init hyperparameters
+# Init hyperparameters
 
-config_path="./configs/"
-configs = OmegaConf.load(config_path+'train.yaml')
+config_path = "./configs/"
+configs = OmegaConf.load(config_path + "train.yaml")
 
 # Hyperparameters extracted
-learning_rate  = configs.hyperparameters.learning_rate
+learning_rate = configs.hyperparameters.learning_rate
 EPOCHS = configs.hyperparameters.epochs
 batch = configs.hyperparameters.batch_size
-
-
 
 
 if __name__ == "__main__":
     data_output_filepath = "data/processed/"
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
     model = ElectraClassifier()
     model = model.to(device)
     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
@@ -200,13 +200,16 @@ if __name__ == "__main__":
     # pdb.set_trace()
     eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
     optimizer = AdamW(
-        model.parameters(), lr=learning_rate, correct_bias=False, no_deprecation_warning=True
-        )
+        model.parameters(),
+        lr=learning_rate,
+        correct_bias=False,
+        no_deprecation_warning=True,
+    )
 
     total_steps = len(train_dataloader) * EPOCHS
     scheduler = get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=0, num_training_steps=total_steps
-        )
+    )
     loss_fn = nn.CrossEntropyLoss().to(device)
-    train_new(model, train_dataset, train_dataloader, eval_dataset,EPOCHS)
-    print('done')
+    train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS)
+    print("done")

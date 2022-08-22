@@ -1,35 +1,38 @@
-# Base image
-FROM python:3.7.10-slim
+# first stage
+FROM nvidia/cuda:11.7.1-base-ubuntu22.04 as builder
+RUN apt-get update && apt-get install -y curl wget gcc build-essential
 
-# install python 
-RUN apt update && \
-    apt install --no-install-recommends -y build-essential gcc && \
-    apt clean && rm -rf /var/lib/apt/lists/*
+# install conda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.5.12-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda
 
-# Copy files to docker
-WORKDIR /
-COPY requirements.txt requirements.txt
-COPY setup.py setup.py
-COPY src/ src/
-COPY data/ data/
-COPY configs/ configs/
+# create env with python 3.5
+RUN /opt/conda/bin/conda create -y -n myenv python=3.7.10
 
-# Install ML_things and google.cloud storage
-RUN apt update
-RUN apt install -y git
-RUN apt install -y wget
-RUN rm -rf /var/lib/apt/lists/*
-#RUN pip3 install git+https://github.com/gmihaila/ml_things.git --no-cache-dir
-RUN pip3 install google-cloud-storage --no-cache-dir
-RUN pip3 install google-cloud-secret-manager --no-cache-dir
-RUN pip3 install --upgrade google-auth --no-cache-dir
+# install requirements
+WORKDIR /app
+COPY requirements.txt /app
+ENV PATH=/opt/conda/envs/myenv/bin:$PATH    
+RUN pip install -r requirements.txt
+RUN pip install cloudml-hypertune
+RUN pip uninstall -y pip
 
-# Install requirements
-RUN pip3 install -r requirements.txt --no-cache-dir
 
-# Installs cloudml-hypertune for hyperparameter tuning.
-# It’s not needed if you don’t want to do hyperparameter tuning.
-#RUN pip3 install cloudml-hypertune
+
+####################
+# second stage (note: FROM container must be the same as builder)
+FROM nvidia/cuda:11.7.1-base-ubuntu22.04 as runner
+
+RUN apt-get update && apt-get install -y curl wget gcc build-essential
+
+# copy environment data including python
+COPY --from=builder /opt/conda/envs/myenv/bin /opt/conda/envs/myenv/bin
+COPY --from=builder /opt/conda/envs/myenv/lib /opt/conda/envs/myenv/lib
+
+# do some env settings
+ENV PATH=/opt/conda/envs/myenv/bin:$PATH
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
 
 # Installs google cloud sdk, this is mostly for using gsutil to export model.
 RUN wget -nv \
@@ -50,7 +53,18 @@ ENV PATH $PATH:/root/tools/google-cloud-sdk/bin
 # Make sure gsutil will use the default service account
 RUN echo '[GoogleCompute]\nservice_account = default' > /etc/boto.cfg
 
-# Define entrypoint for docker image
-# -u: redirects any print statements to our consol
-# Otherwise find print statements in docker log
-ENTRYPOINT ["python3", "-u", "src/models/train_model.py"]
+RUN echo $PATH 
+
+
+#RUN echo $PYTHONPATH
+####################
+# final image
+FROM runner
+WORKDIR /root   
+COPY requirements.txt requirements.txt
+COPY setup.py setup.py
+COPY src/ src/
+COPY data/ data/
+COPY configs/ configs/
+COPY models/ models/
+ENTRYPOINT [ "python", "src/models/train_model.py"]

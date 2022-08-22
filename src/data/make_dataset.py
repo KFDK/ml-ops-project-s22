@@ -1,11 +1,10 @@
-
 """ 
 This script converts raw data into tokenized text using google electra. 
 It returns and saves a torch dataset object to ./data/processed/
 """
 
 # -*- coding: utf-8 -*-
-import click
+# import click
 import logging
 from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
@@ -19,11 +18,11 @@ from sklearn.model_selection import train_test_split
 from hydra import compose, initialize
 from omegaconf import OmegaConf
 
-config_path="./configs/"
-configs = OmegaConf.load(config_path+'makedata.yaml')
+config_path = "./configs/"
+configs = OmegaConf.load(config_path + "makedata.yaml")
 
 # Hyperparameters extracted
-input_filepath  = configs.hyperparameters.input_filepath
+input_filepath = configs.hyperparameters.input_filepath
 output_filepath = configs.hyperparameters.output_filepath
 small_test = configs.hyperparameters.small_test
 
@@ -48,11 +47,11 @@ class TorchDataset(torch.utils.data.Dataset):
 
 
 def read_data(input_filepath):
-    """ Read data from raw. returns as pandas dataframe """
+    """Read data from raw. returns as pandas dataframe"""
     if small_test:
-        fake = pd.read_csv(input_filepath + "/Fake.csv")[:50]
-        true = pd.read_csv(input_filepath + "/True.csv")[:50]
-        print('small test set enabled! size:' + str(len(fake)*2))
+        fake = pd.read_csv(input_filepath + "/Fake.csv")[:500]
+        true = pd.read_csv(input_filepath + "/True.csv")[:500]
+        print("small test set enabled! size:" + str(len(fake) * 2))
         fake["target"] = 0  # Fake
         true["target"] = 1  # True
         df = pd.concat([true, fake])
@@ -66,27 +65,26 @@ def read_data(input_filepath):
 
 
 def split_data(df):
-    """ split pandas dataframe """
+    """split pandas dataframe"""
     df_train, df_test = train_test_split(df, test_size=0.4, random_state=1)
     df_test, df_eval = train_test_split(df_test, test_size=0.25, random_state=1)
     return df_train, df_test, df_eval
 
 
 def my_tokenize(X):
-    """ Tokenize with electra. Input list of texts """
+    """Tokenize with electra. Input list of texts"""
     electra_huggingface = "google/electra-small-discriminator"
     tokenizer = AutoTokenizer.from_pretrained(electra_huggingface)
     tokenizer.padding_side = "left"
-    encodings = tokenizer(X,  truncation=True, padding=True)
+    encodings = tokenizer(X, truncation=True, padding=True)
 
     return encodings  # tuple with input_ids and masks
 
 
 def convert_to_torchdataset(
-        train_encodings, test_encodings, 
-        eval_encodings, y_train, y_test, y_eval
-        ):
-    """ Convert to PyTorch Datasets class """
+    train_encodings, test_encodings, eval_encodings, y_train, y_test, y_eval
+):
+    """Convert to PyTorch Datasets class"""
     train_set = TorchDataset(train_encodings, y_train.to_list())
     test_set = TorchDataset(test_encodings, y_test.to_list())
     eval_set = TorchDataset(eval_encodings, y_eval.to_list())
@@ -94,10 +92,11 @@ def convert_to_torchdataset(
 
 
 def save_dataloader_as_torchdataset(output_filepath, train_set, test_set, eval_set):
-    """ saves data """
+    """saves data"""
     torch.save(train_set, output_filepath + "/train_dataset.pt")
     torch.save(test_set, output_filepath + "/test_dataset.pt")
     torch.save(eval_set, output_filepath + "/eval_dataset.pt")
+
 
 def main(input_filepath, output_filepath):
     """Runs data processing scripts to turn raw data from (../raw) into
