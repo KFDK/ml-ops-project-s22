@@ -2,4 +2,4 @@
 hyperparameters:
   input_filepath: './data/raw/'
   output_filepath: './data/processed/'
-  small_test: False
+  small_test: True

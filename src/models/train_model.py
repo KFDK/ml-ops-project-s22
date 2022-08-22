@@ -40,9 +40,13 @@ from torch import nn
 # Configs
 from hydra import compose, initialize
 from omegaconf import OmegaConf
-import wandb
-from google.cloud import secretmanager
+
+# import wandb
+# from google.cloud import secretmanager
 import os
+
+# import gcsfs
+from google.cloud import storage
 
 
 class TorchDataset(torch.utils.data.Dataset):
@@ -128,6 +132,23 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
     return correct_predictions.double() / n_examples, np.mean(losses)
 
 
+def save_model(model, model_name):
+    pdb.set_trace()
+    storage_client = storage.Client()
+    bucket = storage_client.bucket("better-mldtu-aiplatform")
+    blob = bucket.blob("models/" + model_name + ".pt")
+    with blob.open("wb") as f:
+        torch.save(model, f)
+
+
+# def save_model(model):
+#     fs = gcsfs.GCSFileSystem(project="better-mldtu")
+#     with fs.open(
+#         "gs://better-mldtu-aiplatform/" + f"models/model_" + str(dt) + ".pt", "wb"
+#     ) as f:
+#         torch.save(model, f)
+
+
 def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_examples):
     model = model.train()
     losses = []
@@ -151,7 +172,6 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
 
 
 def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
-    dt = str(datetime.now())[:16]
     history = defaultdict(list)
     best_accuracy = 0
     for epoch in tqdm(range(EPOCHS)):
@@ -175,8 +195,7 @@ def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
         history["val_loss"].append(val_loss)
 
         if val_acc > best_accuracy:
-
-            torch.save(model.state_dict(), "models/model_" + dt + ".pth")
+            save_model(model, "model_test")
             best_accuracy = val_acc
 
 
@@ -196,6 +215,7 @@ learning_rate = configs.hyperparameters.learning_rate
 EPOCHS = configs.hyperparameters.epochs
 batch = configs.hyperparameters.batch_size
 seed = configs.hyperparameters.seed
+model_name = configs.hyperparameters.model_name
 
 
 def get_secret():
@@ -214,6 +234,7 @@ if __name__ == "__main__":
     # Set seed for reproducibility.
     set_seed(seed)
     torch.manual_seed(seed)
+    dt = str(datetime.now())[:16]
 
     # get secret manager configs here
     # get_secret

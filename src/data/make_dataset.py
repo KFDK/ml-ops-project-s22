@@ -49,8 +49,8 @@ class TorchDataset(torch.utils.data.Dataset):
 def read_data(input_filepath):
     """Read data from raw. returns as pandas dataframe"""
     if small_test:
-        fake = pd.read_csv(input_filepath + "/Fake.csv")[:500]
-        true = pd.read_csv(input_filepath + "/True.csv")[:500]
+        fake = pd.read_csv(input_filepath + "/Fake.csv")[:10]
+        true = pd.read_csv(input_filepath + "/True.csv")[:10]
         print("small test set enabled! size:" + str(len(fake) * 2))
         fake["target"] = 0  # Fake
         true["target"] = 1  # True
