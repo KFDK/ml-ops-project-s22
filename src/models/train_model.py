@@ -3,6 +3,7 @@
 import numpy as np
 from tqdm.auto import tqdm
 from collections import defaultdict
+from datetime import datetime
 
 # Sklearn
 from sklearn.model_selection import train_test_split
@@ -143,6 +144,7 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
 
 
 def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
+    dt = str(datetime.now())[:16]
     history = defaultdict(list)
     best_accuracy = 0
     for epoch in tqdm(range(EPOCHS)):
@@ -166,7 +168,7 @@ def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
         history["val_loss"].append(val_loss)
 
         if val_acc > best_accuracy:
-            torch.save(model.state_dict(), "best_model_state.bin")
+            torch.save(model.state_dict(), "models/model_" + dt + ".pth")
             best_accuracy = val_acc
 
 
@@ -178,9 +180,9 @@ def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
 #     train(model, train_dataset, eval_dataset)
 
 # Init hyperparameters
-
 config_path = "./configs/"
 configs = OmegaConf.load(config_path + "train.yaml")
+
 
 # Hyperparameters extracted
 learning_rate = configs.hyperparameters.learning_rate

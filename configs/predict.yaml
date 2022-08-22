@@ -1,0 +1,4 @@
+#config.yaml
+hyperparameters:
+  model_filepath: './models/'
+  model:          'model_2022-08-17 11:56.pth'
