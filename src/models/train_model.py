@@ -5,7 +5,7 @@ config file: train.yaml
 """
 
 # Misc
-#from select import EPOLLEXCLUSIVE
+# from select import EPOLLEXCLUSIVE
 import numpy as np
 from tqdm.auto import tqdm
 from collections import defaultdict
@@ -23,13 +23,13 @@ from sklearn.metrics import classification_report
 import torch
 from torch import nn, optim
 from transformers import (
-    set_seed
+    set_seed,
     AutoTokenizer,
     AutoModelForPreTraining,
     AdamW,
     get_scheduler,
     get_linear_schedule_with_warmup,
-    )
+)
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import pdb
@@ -43,6 +43,7 @@ from omegaconf import OmegaConf
 import wandb
 from google.cloud import secretmanager
 import os
+
 
 class TorchDataset(torch.utils.data.Dataset):
     def __init__(self, encodings, labels):
@@ -64,7 +65,8 @@ class TorchDataset(torch.utils.data.Dataset):
 
 def load_model(device):
     model = ElectraModel.from_pretrained(
-        pretrained_model_name_or_path="google/electra-small-discriminator", num_labels=2)
+        pretrained_model_name_or_path="google/electra-small-discriminator", num_labels=2
+    )
     model.to(device)
     return model
 
@@ -83,8 +85,12 @@ class ElectraClassifier(nn.Module):
     def __init__(self, num_labels=2):
         super(ElectraClassifier, self).__init__()
         self.num_labels = num_labels
-        self.electra = ElectraModel.from_pretrained("google/electra-small-discriminator")
-        self.dense1 = nn.Linear(self.electra.config.hidden_size, self.electra.config.hidden_size)
+        self.electra = ElectraModel.from_pretrained(
+            "google/electra-small-discriminator"
+        )
+        self.dense1 = nn.Linear(
+            self.electra.config.hidden_size, self.electra.config.hidden_size
+        )
         self.dropout = nn.Dropout(self.electra.config.hidden_dropout_prob)
         self.out_proj = nn.Linear(self.electra.config.hidden_size, self.num_labels)
 
@@ -97,7 +103,9 @@ class ElectraClassifier(nn.Module):
         return sm(logits)
 
     def forward(self, input_ids=None, attention_mask=None):
-        discriminator_hidden_states = self.electra(input_ids=input_ids, attention_mask=attention_mask)
+        discriminator_hidden_states = self.electra(
+            input_ids=input_ids, attention_mask=attention_mask
+        )
         sequence_output = discriminator_hidden_states[0]
         logits = self.classifier(sequence_output)
         return logits
@@ -141,12 +149,13 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
 
     return correct_predictions.double() / n_examples, np.mean(losses)
 
-def train_new(model, train_dataset,train_dataloader, eval_dataset,EPOCHS):
+
+def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
     dt = str(datetime.now())[:16]
     history = defaultdict(list)
     best_accuracy = 0
     for epoch in tqdm(range(EPOCHS)):
-        print('starting train_epoch')
+        print("starting train_epoch")
         train_acc, train_loss = train_epoch(
             model,
             train_dataloader,
@@ -155,10 +164,10 @@ def train_new(model, train_dataset,train_dataloader, eval_dataset,EPOCHS):
             device,
             scheduler,
             len(train_dataset),
-            )
+        )
         val_acc, val_loss = eval_model(
             model, eval_dataloader, loss_fn, device, len(eval_dataset)
-            )
+        )
 
         history["train_acc"].append(train_acc)
         history["train_loss"].append(train_loss)
@@ -167,7 +176,7 @@ def train_new(model, train_dataset,train_dataloader, eval_dataset,EPOCHS):
 
         if val_acc > best_accuracy:
 
-            torch.save(model.state_dict(), "models/model_"+dt+".pth")
+            torch.save(model.state_dict(), "models/model_" + dt + ".pth")
             best_accuracy = val_acc
 
 
@@ -178,12 +187,12 @@ def train_new(model, train_dataset,train_dataloader, eval_dataset,EPOCHS):
 #     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
 #     train(model, train_dataset, eval_dataset)
 
-#Init hyperparameters
-config_path="./configs/"
-configs = OmegaConf.load(config_path+'train.yaml')
+# Init hyperparameters
+config_path = "./configs/"
+configs = OmegaConf.load(config_path + "train.yaml")
 
 # Hyperparameters extracted
-learning_rate  = configs.hyperparameters.learning_rate
+learning_rate = configs.hyperparameters.learning_rate
 EPOCHS = configs.hyperparameters.epochs
 batch = configs.hyperparameters.batch_size
 seed = configs.hyperparameters.seed
@@ -206,11 +215,9 @@ if __name__ == "__main__":
     set_seed(seed)
     torch.manual_seed(seed)
 
-    
     # get secret manager configs here
     # get_secret
     # setup wandb
-
 
     data_output_filepath = "data/processed/"
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -222,20 +229,22 @@ if __name__ == "__main__":
     train_dataloader = DataLoader(train_dataset, batch_size=batch)
     # pdb.set_trace()
     eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
-    
+
     optimizer = AdamW(
-        model.parameters(), 
-        lr=learning_rate, 
-        correct_bias=False, 
-        no_deprecation_warning=True
-        )
+        model.parameters(),
+        lr=learning_rate,
+        correct_bias=False,
+        no_deprecation_warning=True,
+    )
 
     total_steps = len(train_dataloader) * EPOCHS
-    
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
-    
-    loss_fn = nn.CrossEntropyLoss().to(device)
-    
-    train_new(model, train_dataset, train_dataloader, eval_dataset,EPOCHS)
 
-    print('done')
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer, num_warmup_steps=0, num_training_steps=total_steps
+    )
+
+    loss_fn = nn.CrossEntropyLoss().to(device)
+
+    train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS)
+
+    print("done")
