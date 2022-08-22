@@ -41,6 +41,7 @@ from torch import nn
 from hydra import compose, initialize
 from omegaconf import OmegaConf
 import wandb
+from google.cloud import secretmanager
 import os
 
 class TorchDataset(torch.utils.data.Dataset):
@@ -63,8 +64,7 @@ class TorchDataset(torch.utils.data.Dataset):
 
 def load_model(device):
     model = ElectraModel.from_pretrained(
-        pretrained_model_name_or_path="google/electra-small-discriminator", num_labels=2
-    )
+        pretrained_model_name_or_path="google/electra-small-discriminator", num_labels=2)
     model.to(device)
     return model
 
@@ -124,7 +124,6 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
     model = model.train()
     losses = []
     correct_predictions = 0
-
     for d in data_loader:
         input_ids = d["input_ids"].to(device)
         attention_mask = d["attention_mask"].to(device)
@@ -190,6 +189,18 @@ batch = configs.hyperparameters.batch_size
 seed = configs.hyperparameters.seed
 
 
+def get_secret():
+    client = secretmanager.SecretManagerServiceClient()
+    secret_path = "projects/822364161295/secrets/wandb_api_key"
+    secret = client.access_secret_version(secret_path)
+    return secret.payload.data.decode("UTF-8")
+
+
+def freeze_electra():
+    for p in model.electra.parameters():
+        p.requires_grad = False
+
+
 if __name__ == "__main__":
     # Set seed for reproducibility.
     set_seed(seed)
@@ -197,28 +208,34 @@ if __name__ == "__main__":
 
     
     # get secret manager configs here
+    # get_secret
+    # setup wandb
 
-    # init wandb
-    
-    #wandb.init(project="test-project", entity="gahk_mlops")
 
     data_output_filepath = "data/processed/"
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = ElectraClassifier()
     model = model.to(device)
+    freeze_electra()
     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
     train_dataloader = DataLoader(train_dataset, batch_size=batch)
     # pdb.set_trace()
     eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
+    
     optimizer = AdamW(
-        model.parameters(), lr=learning_rate, correct_bias=False, no_deprecation_warning=True
+        model.parameters(), 
+        lr=learning_rate, 
+        correct_bias=False, 
+        no_deprecation_warning=True
         )
 
     total_steps = len(train_dataloader) * EPOCHS
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=0, num_training_steps=total_steps
-        )
+    
+    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
+    
     loss_fn = nn.CrossEntropyLoss().to(device)
+    
     train_new(model, train_dataset, train_dataloader, eval_dataset,EPOCHS)
+
     print('done')
