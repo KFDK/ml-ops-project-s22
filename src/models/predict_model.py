@@ -105,11 +105,7 @@ def load_model(model_name):
     blob = bucket.blob("models/" + model_name + ".pt")
     model_string=blob.download_as_string()
     weights = io.BytesIO(model_string)
-    print(type(model_string))
-    model = ElectraClassifier()
     prams=torch.load(weights, map_location=torch.device('cpu')) # Remove if running on GPU
-    print(type(prams))
-    # model.load_state_dict(prams)
     return prams
 
 def get_classification_report(predections,true):
@@ -126,7 +122,6 @@ if __name__ == "__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     data_output_filepath = "data/processed/"
     
-
     model = load_model('model_test')
     
     test_dataset = torch.load(data_output_filepath + "test_dataset.pt")
