@@ -41,8 +41,8 @@ from torch import nn
 from hydra import compose, initialize
 from omegaconf import OmegaConf
 
-# import wandb
-# from google.cloud import secretmanager
+import wandb
+from google.cloud import secretmanager
 import os
 
 # import gcsfs
@@ -138,7 +138,6 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
 
 
 def save_model(model, model_name):
-    # pdb.set_trace()
     storage_client = storage.Client()
     bucket = storage_client.bucket("better-mldtu-aiplatform")
     blob = bucket.blob("models/" + model_name + ".pt")
@@ -155,14 +154,24 @@ def save_model(model, model_name):
 
 
 def access_secret(project_id, secret_id):
-    client = secretmanager.SecretManagerServiceClient(project_id, secret_id)
+    client = secretmanager.SecretManagerServiceClient()
     name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
     response = client.access_secret_version(request={"name": name})
-    pdb.set_trace()
-    print(response)
+    return str(response.payload.data)
 
 
-# def init_wandb():
+def init_wandb(key):
+    wandb.init(project="mlops_wandb_project", entity="gahk_mlops")
+    
+    os.environ['WANDB_MODE']='online'
+    os.environ['WANDB_API_KEY']=key
+    wandb_agent = (
+                    "wandb agent " + 
+                    "gahk_mlops" + 
+                    "/" + 
+                    'mlops_wandb_project' 
+                    )
+    os.system(wandb_agent)
 
 
 def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_examples):
@@ -238,7 +247,6 @@ def get_secret():
     client = secretmanager.SecretManagerServiceClient()
     secret_path = "projects/822364161295/secrets/wandb_api_key"
     secret = client.access_secret_version(secret_path)
-    pdb.set_trace()
     return secret.payload.data.decode("UTF-8")
 
 
@@ -248,6 +256,13 @@ def freeze_electra():
 
 
 if __name__ == "__main__":
+    gcp_project_id = "better-mldtu"
+    gcp_secret_id = "wandb_api_key"
+    api_key=access_secret(project_id=gcp_project_id, secret_id=gcp_secret_id)
+    init_wandb(api_key)
+    # pdb.set_trace()
+
+
     # Set seed for reproducibility.
     set_seed(seed)
     torch.manual_seed(seed)
@@ -265,7 +280,6 @@ if __name__ == "__main__":
     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
     train_dataloader = DataLoader(train_dataset, batch_size=batch)
-    # pdb.set_trace()
     eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
 
     optimizer = AdamW(
@@ -283,11 +297,6 @@ if __name__ == "__main__":
 
     loss_fn = nn.CrossEntropyLoss().to(device)
 
-    # get_secret()
-    # gcp_project_id = "better-mldtu"
-    # gcp_secret_id = "wandb_api_key"
-    # access_secret(project_id=gcp_project_id, secret_id=gcp_secret_id)
-
     train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS)
 
-    print("done")
+    print("done!")
