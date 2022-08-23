@@ -98,3 +98,6 @@ notebooks/
 # ignore data 
 *.csv 
 *.pt
+
+# wandb
+wandb/
