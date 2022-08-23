@@ -37,7 +37,6 @@ from transformers import ElectraModel, TrainingArguments, Trainer, AutoTokenizer
 import torch
 from torch import nn
 
-# Configs
 from hydra import compose, initialize
 from omegaconf import OmegaConf
 
@@ -48,10 +47,6 @@ import os
 # import gcsfs
 from google.cloud import storage
 from google.cloud import secretmanager
-
-# import faulthandler
-
-# faulthandler.enable()
 
 
 class TorchDataset(torch.utils.data.Dataset):
@@ -144,32 +139,12 @@ def save_model(model, model_name):
     with blob.open("wb", ignore_flush=True) as f:
         torch.save(model, f)
 
-
 # def save_model(model):
 #     fs = gcsfs.GCSFileSystem(project="better-mldtu")
 #     with fs.open(
 #         "gs://better-mldtu-aiplatform/" + f"models/model_" + str(dt) + ".pt", "wb"
 #     ) as f:
 #         torch.save(model, f)
-
-
-def access_secret(project_id, secret_id):
-    # pdb.set_trace()
-    client = secretmanager.SecretManagerServiceClient()
-    name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
-    response = client.access_secret_version(request={"name": name})
-    return response.payload.data.decode("utf-8")
-
-
-def init_wandb(key):
-    wandb.login(key=key)
-    wandb.init(project="mlops_wandb_project", entity="gahk_mlops")
-
-    os.environ["WANDB_MODE"] = "online"
-    os.environ["WANDB_API_KEY"] = key
-    wandb_agent = "wandb agent " + "gahk_mlops" + "/" + "mlops_wandb_project"
-    os.system(wandb_agent)
-
 
 def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_examples):
     model = model.train()
@@ -205,12 +180,21 @@ def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
             optimizer,
             device,
             scheduler,
-            len(train_dataset),
-        )
-        val_acc, val_loss = eval_model(
-            model, eval_dataloader, loss_fn, device, len(eval_dataset)
-        )
+            len(train_dataset),)
 
+        val_acc, val_loss = eval_model(
+            model, eval_dataloader, loss_fn, device, len(eval_dataset))
+
+        wandb.log(
+                {
+                    "Training_loss": train_loss,
+                    "Validation_loss": val_loss,
+                    "Training_accuracy": train_acc,
+                    "Validation_accuracy": val_acc,
+                }
+            )
+        
+        
         history["train_acc"].append(train_acc)
         history["train_loss"].append(train_loss)
         history["val_acc"].append(val_acc)
@@ -231,6 +215,7 @@ def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
 # Init hyperparameters
 config_path = "./configs/"
 configs = OmegaConf.load(config_path + "train.yaml")
+configs_secret = OmegaConf.load(config_path + "secret.yaml")
 
 # Hyperparameters extracted
 learning_rate = configs.hyperparameters.learning_rate
@@ -246,6 +231,20 @@ def get_secret():
     secret = client.access_secret_version(secret_path)
     return secret.payload.data.decode("UTF-8")
 
+def access_secret(project_id, secret_id):
+    client = secretmanager.SecretManagerServiceClient()
+    name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+    response = client.access_secret_version(request={"name": name})
+    return response.payload.data.decode("utf-8")
+
+def init_wandb(key):
+    wandb.login(key=key)
+    wandb.init(project="mlops_wandb_project", entity="gahk_mlops")
+    os.environ["WANDB_MODE"] = "online"
+    os.environ["WANDB_API_KEY"] = key
+    wandb_agent = "wandb agent " + "gahk_mlops" + "/" + "mlops_wandb_project"
+    os.system(wandb_agent)
+
 
 def freeze_electra():
     for p in model.electra.parameters():
@@ -253,27 +252,23 @@ def freeze_electra():
 
 
 if __name__ == "__main__":
-    gcp_project_id = "better-mldtu"
-    gcp_secret_id = "wandb_api_key"
-    api_key = access_secret(project_id=gcp_project_id, secret_id=gcp_secret_id)
-    # api_key = "e8d70bdabfe211a4d6306b5d0a8db41f77ebf3bd"
-    # print(api_key)
+    # gcp_project_id = "better-mldtu"
+    # gcp_secret_id = "wandb_api_key"
+    # api_key = access_secret(project_id=gcp_project_id, secret_id=gcp_secret_id)
+    api_key = configs_secret.hyperparameters.wandb_api_key
     init_wandb(api_key)
-    # pdb.set_trace()
 
     # Set seed for reproducibility.
     set_seed(seed)
     torch.manual_seed(seed)
     dt = str(datetime.now())[:16]
 
-    # get secret manager configs here
-    # get_secret
-    # setup wandb
-
     data_output_filepath = "data/processed/"
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = ElectraClassifier()
     model = model.to(device)
+    wandb.watch(model, log_freq=100)
+
     freeze_electra()
     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
