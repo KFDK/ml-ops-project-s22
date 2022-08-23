@@ -14,4 +14,9 @@ transformers==4.21.1
 #google-cloud==0.34.0
 #google==3.0.0
 gcsfs==2022.7.1
+wandb==0.13.1
+google-cloud-secret-manager==2.12.3
+google-cloud-storage==2.5.0
+
+
 

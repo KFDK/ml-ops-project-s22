@@ -154,23 +154,20 @@ def save_model(model, model_name):
 
 
 def access_secret(project_id, secret_id):
+    # pdb.set_trace()
     client = secretmanager.SecretManagerServiceClient()
     name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
     response = client.access_secret_version(request={"name": name})
-    return str(response.payload.data)
+    return response.payload.data.decode("utf-8")
 
 
 def init_wandb(key):
+    wandb.login(key=key)
     wandb.init(project="mlops_wandb_project", entity="gahk_mlops")
-    
-    os.environ['WANDB_MODE']='online'
-    os.environ['WANDB_API_KEY']=key
-    wandb_agent = (
-                    "wandb agent " + 
-                    "gahk_mlops" + 
-                    "/" + 
-                    'mlops_wandb_project' 
-                    )
+
+    os.environ["WANDB_MODE"] = "online"
+    os.environ["WANDB_API_KEY"] = key
+    wandb_agent = "wandb agent " + "gahk_mlops" + "/" + "mlops_wandb_project"
     os.system(wandb_agent)
 
 
@@ -258,10 +255,11 @@ def freeze_electra():
 if __name__ == "__main__":
     gcp_project_id = "better-mldtu"
     gcp_secret_id = "wandb_api_key"
-    api_key=access_secret(project_id=gcp_project_id, secret_id=gcp_secret_id)
+    api_key = access_secret(project_id=gcp_project_id, secret_id=gcp_secret_id)
+    # api_key = "e8d70bdabfe211a4d6306b5d0a8db41f77ebf3bd"
+    # print(api_key)
     init_wandb(api_key)
     # pdb.set_trace()
-
 
     # Set seed for reproducibility.
     set_seed(seed)
