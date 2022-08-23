@@ -1,11 +1,13 @@
 """ 
 This script loads a model and evalutes that model.
+
 config file: predict.yaml
 """
 # Misc
 #from select import EPOLLEXCLUSIVE
 import numpy as np
 from collections import defaultdict
+import pdb
 
 # Sklearn
 from sklearn.metrics import f1_score
@@ -20,6 +22,8 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from torch import nn
 from omegaconf import OmegaConf
+from google.cloud import storage
+import io
 
 # Hyperparameters extracted
 config_path="./configs/"
@@ -94,12 +98,19 @@ def get_predictions(model, data_loader):
     return predictions, prediction_probs, real_values
 
 
-def load_model(ElectraClassifier,path,model_name):
-    """ Loads model from path from config file """
+def load_model(model_name):
+    """ Loads model from path from GC bucket """
+    client = storage.Client()
+    bucket = client.get_bucket("better-mldtu-aiplatform")
+    blob = bucket.blob("models/" + model_name + ".pt")
+    model_string=blob.download_as_string()
+    weights = io.BytesIO(model_string)
+    print(type(model_string))
     model = ElectraClassifier()
-    prams=torch.load(path+model_name)
-    model.load_state_dict(prams)
-    return model
+    prams=torch.load(weights, map_location=torch.device('cpu')) # Remove if running on GPU
+    print(type(prams))
+    # model.load_state_dict(prams)
+    return prams
 
 def get_classification_report(predections,true):
     """ Prints classification report """
@@ -114,7 +125,10 @@ def get_confusion_matrix(predictions,true):
 if __name__ == "__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     data_output_filepath = "data/processed/"
-    model = load_model(ElectraClassifier,path,model_name)
+    
+
+    model = load_model('model_test')
+    
     test_dataset = torch.load(data_output_filepath + "test_dataset.pt")
     test_dataloader = DataLoader(test_dataset, batch_size=2)
     predictions, prediction_probs, real_values = get_predictions(model, test_dataloader)
