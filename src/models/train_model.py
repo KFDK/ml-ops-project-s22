@@ -47,6 +47,11 @@ import os
 
 # import gcsfs
 from google.cloud import storage
+from google.cloud import secretmanager
+
+# import faulthandler
+
+# faulthandler.enable()
 
 
 class TorchDataset(torch.utils.data.Dataset):
@@ -131,13 +136,15 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
             losses.append(loss.item())
     return correct_predictions.double() / n_examples, np.mean(losses)
 
+
 def save_model(model, model_name):
     # pdb.set_trace()
     storage_client = storage.Client()
     bucket = storage_client.bucket("better-mldtu-aiplatform")
     blob = bucket.blob("models/" + model_name + ".pt")
-    with blob.open("wb",ignore_flush=True) as f:
+    with blob.open("wb", ignore_flush=True) as f:
         torch.save(model, f)
+
 
 # def save_model(model):
 #     fs = gcsfs.GCSFileSystem(project="better-mldtu")
@@ -145,6 +152,18 @@ def save_model(model, model_name):
 #         "gs://better-mldtu-aiplatform/" + f"models/model_" + str(dt) + ".pt", "wb"
 #     ) as f:
 #         torch.save(model, f)
+
+
+def access_secret(project_id, secret_id):
+    client = secretmanager.SecretManagerServiceClient(project_id, secret_id)
+    name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
+    response = client.access_secret_version(request={"name": name})
+    pdb.set_trace()
+    print(response)
+
+
+# def init_wandb():
+
 
 def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_examples):
     model = model.train()
@@ -219,6 +238,7 @@ def get_secret():
     client = secretmanager.SecretManagerServiceClient()
     secret_path = "projects/822364161295/secrets/wandb_api_key"
     secret = client.access_secret_version(secret_path)
+    pdb.set_trace()
     return secret.payload.data.decode("UTF-8")
 
 
@@ -262,6 +282,11 @@ if __name__ == "__main__":
     )
 
     loss_fn = nn.CrossEntropyLoss().to(device)
+
+    # get_secret()
+    # gcp_project_id = "better-mldtu"
+    # gcp_secret_id = "wandb_api_key"
+    # access_secret(project_id=gcp_project_id, secret_id=gcp_secret_id)
 
     train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS)
 
