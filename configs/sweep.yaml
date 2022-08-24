@@ -1,0 +1,8 @@
+program: train_model.py
+method: bayes 
+metric: 
+  name: validation_accuracy
+  goal: maximize
+parameters: 
+  learning_rate:
+    values: [1e-4, 1e-3]

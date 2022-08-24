@@ -139,6 +139,7 @@ def save_model(model, model_name):
     with blob.open("wb", ignore_flush=True) as f:
         torch.save(model, f)
 
+
 def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_examples):
     model = model.train()
     losses = []
@@ -161,7 +162,15 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
     return correct_predictions.double() / n_examples, np.mean(losses)
 
 
-def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
+def train(
+    model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS
+):
+    wandb.init(project="mlops_wandb_project", entity="gahk_mlops")
+    learning_rate = wandb.config.learning_rate
+    optimizer = get_optimizer(learning_rate)
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer, num_warmup_steps=0, num_training_steps=total_steps
+    )
     history = defaultdict(list)
     best_accuracy = 0
     for epoch in tqdm(range(EPOCHS)):
@@ -173,21 +182,22 @@ def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
             optimizer,
             device,
             scheduler,
-            len(train_dataset),)
+            len(train_dataset),
+        )
 
         val_acc, val_loss = eval_model(
-            model, eval_dataloader, loss_fn, device, len(eval_dataset))
+            model, eval_dataloader, loss_fn, device, len(eval_dataset)
+        )
 
         wandb.log(
-                {
-                    "Training_loss": train_loss,
-                    "Validation_loss": val_loss,
-                    "Training_accuracy": train_acc,
-                    "Validation_accuracy": val_acc,
-                }
-            )
-        
-        
+            {
+                "Training_loss": train_loss,
+                "Validation_loss": val_loss,
+                "Training_accuracy": train_acc,
+                "Validation_accuracy": val_acc,
+            }
+        )
+
         history["train_acc"].append(train_acc)
         history["train_loss"].append(train_loss)
         history["val_acc"].append(val_acc)
@@ -198,37 +208,19 @@ def train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS):
             best_accuracy = val_acc
 
 
-# def run(data_output_filepath):
-#     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#     model = load_model(device)
-#     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
-#     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
-#     train(model, train_dataset, eval_dataset)
-
-# Init hyperparameters
-config_path = "./configs/"
-configs = OmegaConf.load(config_path + "train.yaml")
-configs_secret = OmegaConf.load(config_path + "secret.yaml")
-
-# Hyperparameters extracted
-learning_rate = configs.hyperparameters.learning_rate
-EPOCHS = configs.hyperparameters.epochs
-batch = configs.hyperparameters.batch_size
-seed = configs.hyperparameters.seed
-model_name = configs.hyperparameters.model_name
-
-
 def get_secret():
     client = secretmanager.SecretManagerServiceClient()
     secret_path = "projects/822364161295/secrets/wandb_api_key"
     secret = client.access_secret_version(secret_path)
     return secret.payload.data.decode("UTF-8")
 
+
 def access_secret(project_id, secret_id):
     client = secretmanager.SecretManagerServiceClient()
     name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
     response = client.access_secret_version(request={"name": name})
     return response.payload.data.decode("utf-8")
+
 
 def init_wandb(key):
     wandb.login(key=key)
@@ -244,12 +236,34 @@ def freeze_electra():
         p.requires_grad = False
 
 
+def get_optimizer(learning_rate):
+    optimizer = AdamW(
+        model.parameters(),
+        lr=learning_rate,
+        correct_bias=False,
+        no_deprecation_warning=True,
+    )
+    return optimizer
+
+
+# Init hyperparameters
+config_path = "./configs/"
+configs = OmegaConf.load(config_path + "train.yaml")
+configs_secret = OmegaConf.load(config_path + "secret.yaml")
+
+# Hyperparameters extracted
+# learning_rate = configs.hyperparameters.learning_rate
+EPOCHS = configs.hyperparameters.epochs
+batch = configs.hyperparameters.batch_size
+seed = configs.hyperparameters.seed
+model_name = configs.hyperparameters.model_name
+
+
 if __name__ == "__main__":
-    # gcp_project_id = "better-mldtu"
-    # gcp_secret_id = "wandb_api_key"
-    # api_key = access_secret(project_id=gcp_project_id, secret_id=gcp_secret_id)
+    sweep_configuration = dict(OmegaConf.load(config_path + "sweep.yaml"))
+    # pdb.set_trace()
     api_key = configs_secret.hyperparameters.wandb_api_key
-    init_wandb(api_key)
+    wandb.login(key=api_key)
 
     # Set seed for reproducibility.
     set_seed(seed)
@@ -260,29 +274,19 @@ if __name__ == "__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = ElectraClassifier()
     model = model.to(device)
-    wandb.watch(model, log_freq=100)
-
+    # wandb.watch(model, log_freq=100)
     freeze_electra()
     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
     train_dataloader = DataLoader(train_dataset, batch_size=batch)
     eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
 
-    optimizer = AdamW(
-        model.parameters(),
-        lr=learning_rate,
-        correct_bias=False,
-        no_deprecation_warning=True,
-    )
-
     total_steps = len(train_dataloader) * EPOCHS
-
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=0, num_training_steps=total_steps
-    )
 
     loss_fn = nn.CrossEntropyLoss().to(device)
 
-    train_new(model, train_dataset, train_dataloader, eval_dataset, EPOCHS)
+    # train(model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS)
+    sweep_id = wandb.sweep(sweep_configuration)
+    wandb.agent(sweep_id, function=train)
 
     print("done!")
