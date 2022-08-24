@@ -1,6 +1,6 @@
 #config.yaml
-program: train_model.py
-method: grid 
+name: my_test_sweep
+method: bayes 
 metric: 
   name: validation_accuracy
   goal: maximize

@@ -162,51 +162,47 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
 
     return correct_predictions.double() / n_examples, np.mean(losses)
 
-
-def train(
-    model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS
-):
-    wandb.init(project="mlops_wandb_project", entity="gahk_mlops")
-    learning_rate = wandb.config.learning_rate
-    optimizer = get_optimizer(learning_rate)
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer, num_warmup_steps=0, num_training_steps=total_steps
-    )
-    history = defaultdict(list)
-    best_accuracy = 0
-    for epoch in tqdm(range(EPOCHS)):
-        print("starting train_epoch")
-        train_acc, train_loss = train_epoch(
-            model,
-            train_dataloader,
-            loss_fn,
-            optimizer,
-            device,
-            scheduler,
-            len(train_dataset),
+# , model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCH
+def train(config=None):
+    
+    with wandb.init(config=config):
+        config = wandb.config
+        # wandb.init(project="mlops_wandb_project", entity="gahk_mlops")with wandb.init(config=config):
+        print(config.keys())
+        learning_rate = config.learning_rate
+        optimizer = get_optimizer(learning_rate)
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer, num_warmup_steps=0, num_training_steps=total_steps
         )
+        best_accuracy = 0
+        for epoch in tqdm(range(EPOCHS)):
+            print("starting train_epoch")
+            train_acc, train_loss = train_epoch(
+                model,
+                train_dataloader,
+                loss_fn,
+                optimizer,
+                device,
+                scheduler,
+                len(train_dataset),
+            )
 
-        val_acc, val_loss = eval_model(
-            model, eval_dataloader, loss_fn, device, len(eval_dataset)
-        )
+            val_acc, val_loss = eval_model(
+                model, eval_dataloader, loss_fn, device, len(eval_dataset)
+            )
 
-        wandb.log(
-            {
-                "Training_loss": train_loss,
-                "Validation_loss": val_loss,
-                "Training_accuracy": train_acc,
-                "Validation_accuracy": val_acc,
-            }
-        )
+            wandb.log(
+                {
+                    "Training_loss": train_loss,
+                    "Validation_loss": val_loss,
+                    "Training_accuracy": train_acc,
+                    "Validation_accuracy": val_acc,
+                }
+            )
 
-        history["train_acc"].append(train_acc)
-        history["train_loss"].append(train_loss)
-        history["val_acc"].append(val_acc)
-        history["val_loss"].append(val_loss)
-
-        if val_acc > best_accuracy:
-            save_model(model, "model_test")
-            best_accuracy = val_acc
+            if val_acc > best_accuracy:
+                save_model(model, "model_test")
+                best_accuracy = val_acc
 
 
 def get_secret():
@@ -262,20 +258,20 @@ model_name = configs.hyperparameters.model_name
 
 if __name__ == "__main__":
     
-    # sweep_configuration = OmegaConf.load(config_path + "sweep.yaml")
-    # sweep_configuration = OmegaConf.to_container(sweep_configuration)
-    # print(sweep_configuration)
+    sweep_configuration = OmegaConf.load(config_path + "sweep.yaml")
+    sweep_configuration = OmegaConf.to_container(sweep_configuration)
+    print(sweep_configuration)
 
-    sweep_config={
-    "name": "my_test_sweep",
-    "method": "grid", 
-    "metric": {"name": "Validation_accuracy", "goal": "maximize"}, 
-    "parameters": {
-        "learning_rate": {
-            "values": [0.0001, 0.001]
-            }
-        }
-    }
+    # sweep_config={
+    # "name": "my_test_sweep",
+    # "method": "bayes", 
+    # "metric": {"name": "Validation_accuracy", "goal": "maximize"}, 
+    # "parameters": {
+    #     "learning_rate": {
+    #         "values": [0.0001, 0.001]
+    #         }
+    #     }
+    # }
 
     api_key = configs_secret.hyperparameters.wandb_api_key
     wandb.login(key=api_key)
@@ -295,14 +291,12 @@ if __name__ == "__main__":
     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
     train_dataloader = DataLoader(train_dataset, batch_size=batch)
     eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
-
     total_steps = len(train_dataloader) * EPOCHS
-
     loss_fn = nn.CrossEntropyLoss().to(device)
 
     # train(model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS)
+    # pdb.set_trace()
+    sweep_id = wandb.sweep(sweep_configuration,project="mlops_wandb_project")
     pdb.set_trace()
-    sweep_id = wandb.sweep(sweep_config)
-    wandb.agent(sweep_id, function=train(model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS))
-
+    wandb.agent(sweep_id, function=train,count=3)
     print("done!")
