@@ -139,13 +139,6 @@ def save_model(model, model_name):
     with blob.open("wb", ignore_flush=True) as f:
         torch.save(model, f)
 
-# def save_model(model):
-#     fs = gcsfs.GCSFileSystem(project="better-mldtu")
-#     with fs.open(
-#         "gs://better-mldtu-aiplatform/" + f"models/model_" + str(dt) + ".pt", "wb"
-#     ) as f:
-#         torch.save(model, f)
-
 def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_examples):
     model = model.train()
     losses = []
