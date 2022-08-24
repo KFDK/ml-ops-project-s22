@@ -262,11 +262,11 @@ model_name = configs.hyperparameters.model_name
 
 if __name__ == "__main__":
     
-    sweep_configuration = OmegaConf.load(config_path + "sweep.yaml")
-    sweep_configuration = OmegaConf.to_container(sweep_configuration)
-    print(sweep_configuration)
+    # sweep_configuration = OmegaConf.load(config_path + "sweep.yaml")
+    # sweep_configuration = OmegaConf.to_container(sweep_configuration)
+    # print(sweep_configuration)
 
-    sweep_conf2={
+    sweep_config={
     "name": "my_test_sweep",
     "method": "bayes", 
     "metric": {"name": "Validation_accuracy", "goal": "maximize"}, 
@@ -302,7 +302,7 @@ if __name__ == "__main__":
 
     # train(model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS)
     pdb.set_trace()
-    sweep_id = wandb.sweep(sweep_conf2)
+    sweep_id = wandb.sweep(sweep_config)
     wandb.agent(sweep_id, function=train(model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS))
 
     print("done!")
