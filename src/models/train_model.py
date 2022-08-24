@@ -69,7 +69,8 @@ class TorchDataset(torch.utils.data.Dataset):
 
 def load_model(device):
     model = ElectraModel.from_pretrained(
-        pretrained_model_name_or_path="google/electra-small-discriminator", num_labels=2
+        pretrained_model_name_or_path="google/electra-small-discriminator", num_labels=2,
+        return_dict=False
     )
     model.to(device)
     return model
@@ -260,14 +261,28 @@ model_name = configs.hyperparameters.model_name
 
 
 if __name__ == "__main__":
-    sweep_configuration = dict(OmegaConf.load(config_path + "sweep.yaml"))
-    # pdb.set_trace()
+    
+    sweep_configuration = OmegaConf.load(config_path + "sweep.yaml")
+    sweep_configuration = OmegaConf.to_container(sweep_configuration)
+    print(sweep_configuration)
+
+    sweep_conf2={
+    "name": "my_test_sweep",
+    "method": "bayes", 
+    "metric": {"name": "Validation_accuracy", "goal": "maximize"}, 
+    "parameters": {
+        "learning_rate": {
+            "values": [0.0001, 0.001]
+            }
+        }
+    }
+
     api_key = configs_secret.hyperparameters.wandb_api_key
     wandb.login(key=api_key)
 
     # Set seed for reproducibility.
-    set_seed(seed)
-    torch.manual_seed(seed)
+    # set_seed(seed)
+    # torch.manual_seed(seed)
     dt = str(datetime.now())[:16]
 
     data_output_filepath = "data/processed/"
@@ -286,7 +301,8 @@ if __name__ == "__main__":
     loss_fn = nn.CrossEntropyLoss().to(device)
 
     # train(model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS)
-    sweep_id = wandb.sweep(sweep_configuration)
-    wandb.agent(sweep_id, function=train)
+    pdb.set_trace()
+    sweep_id = wandb.sweep(sweep_conf2)
+    wandb.agent(sweep_id, function=train(model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS))
 
     print("done!")

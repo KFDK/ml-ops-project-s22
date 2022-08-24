@@ -1,5 +1,6 @@
+#config.yaml
 program: train_model.py
-method: bayes 
+method: grid 
 metric: 
   name: validation_accuracy
   goal: maximize
