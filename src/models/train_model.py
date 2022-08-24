@@ -268,7 +268,7 @@ if __name__ == "__main__":
 
     sweep_config={
     "name": "my_test_sweep",
-    "method": "bayes", 
+    "method": "grid", 
     "metric": {"name": "Validation_accuracy", "goal": "maximize"}, 
     "parameters": {
         "learning_rate": {
