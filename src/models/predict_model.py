@@ -121,11 +121,13 @@ def get_confusion_matrix(predictions,true):
 if __name__ == "__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     data_output_filepath = "data/processed/"
-    
     model = load_model('model_test')
     
+
     test_dataset = torch.load(data_output_filepath + "test_dataset.pt")
-    test_dataloader = DataLoader(test_dataset, batch_size=2)
+    test_dataloader = DataLoader(test_dataset, batch_size=200)
+    
+    print('getting predections')
     predictions, prediction_probs, real_values = get_predictions(model, test_dataloader)
     
     get_classification_report(predictions,real_values)

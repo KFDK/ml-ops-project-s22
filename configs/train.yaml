@@ -1,6 +1,6 @@
 #config.yaml
 hyperparameters:
   batch_size: 16
-  epochs: 1
+  epochs: 20
   seed: 420
   model_name: "electra"

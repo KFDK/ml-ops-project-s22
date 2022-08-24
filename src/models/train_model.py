@@ -121,6 +121,7 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
     losses = []
     correct_predictions = 0
     with torch.no_grad():
+        pdb.set_trace()
         for d in data_loader:
             input_ids = d["input_ids"].to(device)
             attention_mask = d["attention_mask"].to(device)
@@ -164,7 +165,6 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
 
 # , model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCH
 def train(config=None):
-    
     with wandb.init(config=config):
         config = wandb.config
         # wandb.init(project="mlops_wandb_project", entity="gahk_mlops")with wandb.init(config=config):
@@ -260,7 +260,6 @@ if __name__ == "__main__":
     
     sweep_configuration = OmegaConf.load(config_path + "sweep.yaml")
     sweep_configuration = OmegaConf.to_container(sweep_configuration)
-    print(sweep_configuration)
 
     # sweep_config={
     # "name": "my_test_sweep",
@@ -293,10 +292,9 @@ if __name__ == "__main__":
     eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
     total_steps = len(train_dataloader) * EPOCHS
     loss_fn = nn.CrossEntropyLoss().to(device)
-
+    print(len(train_dataloader))
     # train(model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS)
-    # pdb.set_trace()
+
     sweep_id = wandb.sweep(sweep_configuration,project="mlops_wandb_project")
-    pdb.set_trace()
     wandb.agent(sweep_id, function=train,count=3)
     print("done!")
