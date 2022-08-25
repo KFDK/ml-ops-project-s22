@@ -104,3 +104,6 @@ wandb/
 
 # wandb api key
 configs/secret.yaml
+
+#imdb_data
+IMDB_data/

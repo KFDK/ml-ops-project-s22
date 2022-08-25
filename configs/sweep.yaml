@@ -1,13 +1,13 @@
 #config.yaml
-name: testing_opti_2
+name: imdb_big_run_local
 method: bayes 
 metric: 
   name: Validation_accuracy
   goal: maximize
 parameters: 
   learning_rate:
-    values: [1e-4, 1e-3]
+    values: [1e-4, 1e-3, 1e-2]
   batch_size:
-    values: [4,16,22,64]
+    values: [16, 22, 64]
   optimizer_algorithm:
     values: ['adam', 'sgd']

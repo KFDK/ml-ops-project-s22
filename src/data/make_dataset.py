@@ -62,6 +62,15 @@ def read_data(input_filepath):
         df = pd.concat([true, fake])
     return df
 
+def read_data_imdb(input_filepath):
+    """Read data from raw. returns as pandas dataframe"""
+    if small_test:
+        df = pd.read_csv(input_filepath + "/imdb_data.csv")[:2000]
+        print("small test set enabled! size:" + str(len(df)))
+    else:
+        df = pd.read_csv(input_filepath + "/imdb_data.csv")
+    return df
+
 
 def split_data(df):
     """split pandas dataframe"""
@@ -82,7 +91,7 @@ def my_tokenize(X):
 
 def convert_to_torchdataset(
     train_encodings, test_encodings, eval_encodings, y_train, y_test, y_eval
-):
+    ):
     """Convert to PyTorch Datasets class"""
     train_set = TorchDataset(train_encodings, y_train.to_list())
     test_set = TorchDataset(test_encodings, y_test.to_list())
@@ -104,7 +113,7 @@ def main(input_filepath, output_filepath):
     logger = logging.getLogger(__name__)
     logger.info("making final data set from raw data")
 
-    df = read_data(input_filepath)
+    df = read_data_imdb(input_filepath)
     df_train, df_test, df_eval = split_data(df)
 
     train_encodings = my_tokenize(df_train["text"].to_list())
