@@ -1,9 +1,13 @@
 #config.yaml
-name: my_test_sweep
+name: testing_opti_2
 method: bayes 
 metric: 
-  name: validation_accuracy
+  name: Validation_accuracy
   goal: maximize
 parameters: 
   learning_rate:
     values: [1e-4, 1e-3]
+  batch_size:
+    values: [4,16,22,64]
+  optimizer_algorithm:
+    values: ['adam', 'sgd']

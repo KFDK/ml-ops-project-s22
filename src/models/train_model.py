@@ -28,8 +28,8 @@ from transformers import (
     AutoModelForPreTraining,
     AdamW,
     get_scheduler,
-    get_linear_schedule_with_warmup,
-)
+    get_linear_schedule_with_warmup,)
+
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import pdb
@@ -121,7 +121,6 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
     losses = []
     correct_predictions = 0
     with torch.no_grad():
-        pdb.set_trace()
         for d in data_loader:
             input_ids = d["input_ids"].to(device)
             attention_mask = d["attention_mask"].to(device)
@@ -163,20 +162,30 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
 
     return correct_predictions.double() / n_examples, np.mean(losses)
 
-# , model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCH
+#model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCH
 def train(config=None):
     with wandb.init(config=config):
         config = wandb.config
-        # wandb.init(project="mlops_wandb_project", entity="gahk_mlops")with wandb.init(config=config):
-        print(config.keys())
-        learning_rate = config.learning_rate
-        optimizer = get_optimizer(learning_rate)
+        
+        if configs_train.hyperparameters.sweeping:
+            batch = config.batch_size
+            learning_rate = config.learning_rate
+            optimizer_algorithm = config.optimizer_algorithm
+        else:
+            batch = configs_train.hyperparameters.batch
+            learning_rate = configs_train.hyperparameters.learning_rate
+            optimizer_algorithm = configs_train.hyperparameters.optimizer_algorithm
+
+        train_dataloader = DataLoader(train_dataset, batch_size=batch)
+        eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
+        optimizer = get_optimizer(learning_rate,optimizer_algorithm)
+        total_steps = len(train_dataloader) * EPOCHS
         scheduler = get_linear_schedule_with_warmup(
             optimizer, num_warmup_steps=0, num_training_steps=total_steps
-        )
+            )
         best_accuracy = 0
+
         for epoch in tqdm(range(EPOCHS)):
-            print("starting train_epoch")
             train_acc, train_loss = train_epoch(
                 model,
                 train_dataloader,
@@ -201,7 +210,7 @@ def train(config=None):
             )
 
             if val_acc > best_accuracy:
-                save_model(model, "model_test")
+                # save_model(model, "model_test")
                 best_accuracy = val_acc
 
 
@@ -233,68 +242,49 @@ def freeze_electra():
         p.requires_grad = False
 
 
-def get_optimizer(learning_rate):
-    optimizer = AdamW(
-        model.parameters(),
-        lr=learning_rate,
-        correct_bias=False,
-        no_deprecation_warning=True,
-    )
+def get_optimizer(learning_rate,optimizer_algorithm):
+    if optimizer_algorithm == 'adam':
+        optimizer = AdamW(
+            model.parameters(),
+            lr=learning_rate,
+            correct_bias=False,
+            no_deprecation_warning=True)
+    if optimizer_algorithm == 'sgd':
+        optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     return optimizer
 
 
-# Init hyperparameters
-config_path = "./configs/"
-configs = OmegaConf.load(config_path + "train.yaml")
-configs_secret = OmegaConf.load(config_path + "secret.yaml")
-
-# Hyperparameters extracted
-# learning_rate = configs.hyperparameters.learning_rate
-EPOCHS = configs.hyperparameters.epochs
-batch = configs.hyperparameters.batch_size
-seed = configs.hyperparameters.seed
-model_name = configs.hyperparameters.model_name
-
-
 if __name__ == "__main__":
-    
+
+    # Init hyperparameters
+    config_path = "./configs/"
+    configs_train = OmegaConf.load(config_path + "train.yaml")
+    configs_secret = OmegaConf.load(config_path + "secret.yaml")
+
+    # Hyperparameters extracted
+    EPOCHS = configs_train.hyperparameters.epochs
+    seed = configs_train.hyperparameters.seed
+    model_name = configs_train.hyperparameters.model_name
+
     sweep_configuration = OmegaConf.load(config_path + "sweep.yaml")
     sweep_configuration = OmegaConf.to_container(sweep_configuration)
-
-    # sweep_config={
-    # "name": "my_test_sweep",
-    # "method": "bayes", 
-    # "metric": {"name": "Validation_accuracy", "goal": "maximize"}, 
-    # "parameters": {
-    #     "learning_rate": {
-    #         "values": [0.0001, 0.001]
-    #         }
-    #     }
-    # }
-
     api_key = configs_secret.hyperparameters.wandb_api_key
     wandb.login(key=api_key)
 
     # Set seed for reproducibility.
-    # set_seed(seed)
-    # torch.manual_seed(seed)
+    set_seed(seed)
+    torch.manual_seed(seed)
     dt = str(datetime.now())[:16]
 
     data_output_filepath = "data/processed/"
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model = ElectraClassifier()
     model = model.to(device)
-    # wandb.watch(model, log_freq=100)
     freeze_electra()
     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
-    train_dataloader = DataLoader(train_dataset, batch_size=batch)
-    eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
-    total_steps = len(train_dataloader) * EPOCHS
     loss_fn = nn.CrossEntropyLoss().to(device)
-    print(len(train_dataloader))
-    # train(model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCHS)
-
     sweep_id = wandb.sweep(sweep_configuration,project="mlops_wandb_project")
-    wandb.agent(sweep_id, function=train,count=3)
+    wandb.agent(sweep_id, function=train,count=5)
+    # wandb.watch(model, log_freq=100)
     print("done!")

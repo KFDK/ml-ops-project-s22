@@ -10,12 +10,11 @@ from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
 import torch
 from transformers import AutoTokenizer
-from torch.utils.data import DataLoader
+# from torch.utils.data import DataLoader
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
 # Configs
-from hydra import compose, initialize
 from omegaconf import OmegaConf
 
 config_path = "./configs/"
@@ -49,8 +48,8 @@ class TorchDataset(torch.utils.data.Dataset):
 def read_data(input_filepath):
     """Read data from raw. returns as pandas dataframe"""
     if small_test:
-        fake = pd.read_csv(input_filepath + "/Fake.csv")[:10]
-        true = pd.read_csv(input_filepath + "/True.csv")[:10]
+        fake = pd.read_csv(input_filepath + "/Fake.csv")[:200]
+        true = pd.read_csv(input_filepath + "/True.csv")[:200]
         print("small test set enabled! size:" + str(len(fake) * 2))
         fake["target"] = 0  # Fake
         true["target"] = 1  # True

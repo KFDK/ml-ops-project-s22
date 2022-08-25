@@ -1,6 +1,9 @@
 #config.yaml
 hyperparameters:
   batch_size: 16
-  epochs: 20
+  learning_rate: 0.001
+  epochs: 1
   seed: 420
   model_name: "electra"
+  sweeping: True
+  optimizer_algorithm: 'adam'
