@@ -13,6 +13,7 @@ from transformers import AutoTokenizer
 # from torch.utils.data import DataLoader
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import re
 
 # Configs
 from omegaconf import OmegaConf
@@ -64,11 +65,22 @@ def read_data(input_filepath):
 
 def read_data_imdb(input_filepath):
     """Read data from raw. returns as pandas dataframe"""
+    df=pd.read_csv(input_filepath + '/IMDB Dataset.csv')
+    df.sentiment.replace({'positive': 1, 'negative': 0},inplace=True)
+    df.rename(columns={'sentiment': 'target','review': 'text'},inplace=True)
+
+    TAG_RE = re.compile(r'<[^>]+>')
+
+    def remove_tags(text):
+        return TAG_RE.sub('', text)
+
+    df['text']=df['text'].apply(lambda x: remove_tags(x))
+
     if small_test:
-        df = pd.read_csv(input_filepath + "/imdb_data.csv")[:1000]
+        df = df[:1000]
         print("small test set enabled! size: " + str(len(df)))
     else:
-        df = pd.read_csv(input_filepath + "/imdb_data.csv")
+        df = df
     return df
 
 
