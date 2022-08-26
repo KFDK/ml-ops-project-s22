@@ -1,5 +1,5 @@
 #config.yaml
-name: imdb_big_run_local
+name: imdb_big_run_local_v5_ish
 method: bayes 
 metric: 
   name: Validation_accuracy

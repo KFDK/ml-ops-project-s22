@@ -8,16 +8,7 @@ config file: train.yaml
 # from select import EPOLLEXCLUSIVE
 import numpy as np
 from tqdm.auto import tqdm
-from collections import defaultdict
 from datetime import datetime
-
-# Sklearn
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import classification_report
 
 # deep learning / pytorch
 import torch
@@ -25,19 +16,16 @@ from torch import nn, optim
 from transformers import (
     set_seed,
     AutoTokenizer,
-    AutoModelForPreTraining,
     AdamW,
-    get_scheduler,
     get_linear_schedule_with_warmup,)
 
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-import pdb
-from transformers import ElectraModel, TrainingArguments, Trainer, AutoTokenizer
+# import pdb
+from transformers import ElectraModel, AutoTokenizer
 import torch
 from torch import nn
 
-from hydra import compose, initialize
 from omegaconf import OmegaConf
 
 import wandb
@@ -162,9 +150,19 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
 
     return correct_predictions.double() / n_examples, np.mean(losses)
 
-#model, train_dataset, train_dataloader, eval_dataset, eval_dataloader, EPOCH
+
 def train(config=None):
     with wandb.init(config=config):
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        model = ElectraClassifier()
+        model = model.to(device)
+
+        #freze electra
+        for p in model.electra.parameters():
+            p.requires_grad = False
+
+        loss_fn = nn.CrossEntropyLoss().to(device)
+
         config = wandb.config
         
         if configs_train.hyperparameters.sweeping:
@@ -172,13 +170,13 @@ def train(config=None):
             learning_rate = config.learning_rate
             optimizer_algorithm = config.optimizer_algorithm
         else:
-            batch = configs_train.hyperparameters.batch
+            batch = configs_train.hyperparameters.batch_size
             learning_rate = configs_train.hyperparameters.learning_rate
             optimizer_algorithm = configs_train.hyperparameters.optimizer_algorithm
 
         train_dataloader = DataLoader(train_dataset, batch_size=batch)
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
-        optimizer = get_optimizer(learning_rate,optimizer_algorithm)
+        optimizer = get_optimizer(learning_rate,optimizer_algorithm,model)
         total_steps = len(train_dataloader) * EPOCHS
         scheduler = get_linear_schedule_with_warmup(
             optimizer, num_warmup_steps=0, num_training_steps=total_steps
@@ -210,6 +208,7 @@ def train(config=None):
             )
 
             if val_acc > best_accuracy:
+                torch.save(model.state_dict(), 'best_model_state.bin')
                 # save_model(model, "model_test")
                 best_accuracy = val_acc
 
@@ -237,12 +236,7 @@ def init_wandb(key):
     os.system(wandb_agent)
 
 
-def freeze_electra():
-    for p in model.electra.parameters():
-        p.requires_grad = False
-
-
-def get_optimizer(learning_rate,optimizer_algorithm):
+def get_optimizer(learning_rate,optimizer_algorithm, model):
     if optimizer_algorithm == 'adam':
         optimizer = AdamW(
             model.parameters(),
@@ -277,13 +271,10 @@ if __name__ == "__main__":
     dt = str(datetime.now())[:16]
 
     data_output_filepath = "data/processed/"
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = ElectraClassifier()
-    model = model.to(device)
-    freeze_electra()
+
     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
-    loss_fn = nn.CrossEntropyLoss().to(device)
+
     sweep_id = wandb.sweep(sweep_configuration,project="mlops_wandb_project")
     wandb.agent(sweep_id, function=train,count=5)
     # wandb.watch(model, log_freq=100)

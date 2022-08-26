@@ -65,8 +65,8 @@ def read_data(input_filepath):
 def read_data_imdb(input_filepath):
     """Read data from raw. returns as pandas dataframe"""
     if small_test:
-        df = pd.read_csv(input_filepath + "/imdb_data.csv")[:2000]
-        print("small test set enabled! size:" + str(len(df)))
+        df = pd.read_csv(input_filepath + "/imdb_data.csv")[:1000]
+        print("small test set enabled! size: " + str(len(df)))
     else:
         df = pd.read_csv(input_filepath + "/imdb_data.csv")
     return df
