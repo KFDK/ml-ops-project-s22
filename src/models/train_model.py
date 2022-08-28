@@ -3,6 +3,7 @@ This script trains the model.
 
 config file: train.yaml
 """
+import pdb
 
 # Misc
 # from select import EPOLLEXCLUSIVE
@@ -17,10 +18,21 @@ from transformers import (
     set_seed,
     AutoTokenizer,
     AdamW,
-    get_linear_schedule_with_warmup,)
+    get_linear_schedule_with_warmup,
+)
+from transformers import (
+    AdamW,
+    GPT2Config,
+    GPT2ForSequenceClassification,
+    set_seed,
+    get_scheduler,
+    WEIGHTS_NAME,
+    CONFIG_NAME,
+)
 
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+
 # import pdb
 from transformers import ElectraModel, AutoTokenizer
 import torch
@@ -35,6 +47,9 @@ import os
 # import gcsfs
 from google.cloud import storage
 from google.cloud import secretmanager
+
+# import model
+from src.models.model import ElectraClassifier
 
 
 class TorchDataset(torch.utils.data.Dataset):
@@ -57,8 +72,9 @@ class TorchDataset(torch.utils.data.Dataset):
 
 def load_model(device):
     model = ElectraModel.from_pretrained(
-        pretrained_model_name_or_path="google/electra-small-discriminator", num_labels=2,
-        return_dict=False
+        pretrained_model_name_or_path="google/electra-small-discriminator",
+        num_labels=2,
+        return_dict=False,
     )
     model.to(device)
     return model
@@ -74,36 +90,6 @@ def my_tokenize(X):
     return encodings
 
 
-class ElectraClassifier(nn.Module):
-    def __init__(self, num_labels=2):
-        super(ElectraClassifier, self).__init__()
-        self.num_labels = num_labels
-        self.electra = ElectraModel.from_pretrained(
-            "google/electra-small-discriminator"
-        )
-        self.dense1 = nn.Linear(
-            self.electra.config.hidden_size, self.electra.config.hidden_size
-        )
-        self.dropout = nn.Dropout(self.electra.config.hidden_dropout_prob)
-        self.out_proj = nn.Linear(self.electra.config.hidden_size, self.num_labels)
-
-    def classifier(self, sequence_output):
-        x = sequence_output[:, 0, :]
-        x = F.gelu(self.dense1(x))
-        x = self.dropout(x)
-        logits = self.out_proj(x)
-        sm = nn.Softmax(dim=1)
-        return sm(logits)
-
-    def forward(self, input_ids=None, attention_mask=None):
-        discriminator_hidden_states = self.electra(
-            input_ids=input_ids, attention_mask=attention_mask
-        )
-        sequence_output = discriminator_hidden_states[0]
-        logits = self.classifier(sequence_output)
-        return logits
-
-
 def eval_model(model, data_loader, loss_fn, device, n_examples):
     model = model.eval()
     losses = []
@@ -111,6 +97,7 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
     with torch.no_grad():
         for d in data_loader:
             input_ids = d["input_ids"].to(device)
+            pdb.set_trace
             attention_mask = d["attention_mask"].to(device)
             targets = d["labels"].to(device)
             outputs = model(input_ids=input_ids, attention_mask=attention_mask)
@@ -121,12 +108,19 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
     return correct_predictions.double() / n_examples, np.mean(losses)
 
 
-def save_model(model, model_name):
-    storage_client = storage.Client()
-    bucket = storage_client.bucket("better-mldtu-aiplatform")
-    blob = bucket.blob("models/" + model_name + ".pt")
-    with blob.open("wb", ignore_flush=True) as f:
-        torch.save(model, f)
+def save_model(model, time):
+    folder = "models/"
+    save_path = folder + time
+    os.mkdir(save_path)
+
+    # save locally
+    torch.save(model.state_dict(), os.path.join(save_path, WEIGHTS_NAME))
+
+    # save in cloud
+    bucket_name = "better-mldtu-aiplatform"
+    bucket = storage.Client().bucket(bucket_name)
+    blob = bucket.blob(os.path.join(save_path, WEIGHTS_NAME))
+    blob.upload_from_filename(os.path.join(save_path, WEIGHTS_NAME))
 
 
 def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_examples):
@@ -134,6 +128,7 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
     losses = []
     correct_predictions = 0
     for d in data_loader:
+        pdb.set_trace()
         input_ids = d["input_ids"].to(device)
         attention_mask = d["attention_mask"].to(device)
         targets = d["labels"].to(device)
@@ -157,14 +152,14 @@ def train(config=None):
         model = ElectraClassifier()
         model = model.to(device)
 
-        #freze electra
+        # freze electra
         for p in model.electra.parameters():
             p.requires_grad = False
 
         loss_fn = nn.CrossEntropyLoss().to(device)
 
         config = wandb.config
-        
+
         if configs_train.hyperparameters.sweeping:
             batch = config.batch_size
             learning_rate = config.learning_rate
@@ -176,13 +171,14 @@ def train(config=None):
 
         train_dataloader = DataLoader(train_dataset, batch_size=batch)
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
-        optimizer = get_optimizer(learning_rate,optimizer_algorithm,model)
+        optimizer = get_optimizer(learning_rate, optimizer_algorithm, model)
         total_steps = len(train_dataloader) * EPOCHS
         scheduler = get_linear_schedule_with_warmup(
             optimizer, num_warmup_steps=0, num_training_steps=total_steps
-            )
+        )
         best_accuracy = 0
-
+        time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        print(time)
         for epoch in tqdm(range(EPOCHS)):
             train_acc, train_loss = train_epoch(
                 model,
@@ -208,9 +204,9 @@ def train(config=None):
             )
 
             if val_acc > best_accuracy:
-                torch.save(model.state_dict(), 'best_model_state.bin')
-                # save_model(model, "model_test")
                 best_accuracy = val_acc
+                if not configs_train.hyperparameters.sweeping:
+                    save_model(model, time)
 
 
 def get_secret():
@@ -236,14 +232,15 @@ def init_wandb(key):
     os.system(wandb_agent)
 
 
-def get_optimizer(learning_rate,optimizer_algorithm, model):
-    if optimizer_algorithm == 'adam':
+def get_optimizer(learning_rate, optimizer_algorithm, model):
+    if optimizer_algorithm == "adam":
         optimizer = AdamW(
             model.parameters(),
             lr=learning_rate,
             correct_bias=False,
-            no_deprecation_warning=True)
-    if optimizer_algorithm == 'sgd':
+            no_deprecation_warning=True,
+        )
+    if optimizer_algorithm == "sgd":
         optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
     return optimizer
 
@@ -275,7 +272,10 @@ if __name__ == "__main__":
     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
 
-    sweep_id = wandb.sweep(sweep_configuration,project="mlops_wandb_project")
-    wandb.agent(sweep_id, function=train,count=5)
+    sweep_id = wandb.sweep(sweep_configuration, project="mlops_wandb_project")
+    if configs_train.hyperparameters.sweeping:
+        wandb.agent(sweep_id, function=train, count=10)
+    else:
+        wandb.agent(sweep_id, function=train, count=1)
     # wandb.watch(model, log_freq=100)
     print("done!")

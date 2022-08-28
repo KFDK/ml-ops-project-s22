@@ -9,6 +9,7 @@ BUCKET = [OPTIONAL] your-bucket-for-syncing-data (do not include 's3://')
 PROFILE = default
 PROJECT_NAME = ml-ops-project-s22
 PYTHON_INTERPRETER = python3
+ENV_NAME = mlops_py3912
 
 ifeq (,$(shell which conda))
 HAS_CONDA=False
@@ -19,6 +20,13 @@ endif
 #################################################################################
 # COMMANDS                                                                      #
 #################################################################################
+
+## RUN THIS FIRST: Setup conda env 
+environment: 
+	conda env create -f $(ENV_NAME).yml
+	conda activate $(ENV_NAME)
+
+
 
 ## Install Python Dependencies
 requirements: test_environment
@@ -142,3 +150,7 @@ help:
 		printf "\n"; \
 	}' \
 	| more $(shell test $(shell uname) = Darwin && echo '--no-init --raw-control-chars')
+
+
+
+

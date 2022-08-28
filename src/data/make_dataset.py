@@ -10,6 +10,7 @@ from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
 import torch
 from transformers import AutoTokenizer
+
 # from torch.utils.data import DataLoader
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -49,8 +50,8 @@ class TorchDataset(torch.utils.data.Dataset):
 def read_data(input_filepath):
     """Read data from raw. returns as pandas dataframe"""
     if small_test:
-        fake = pd.read_csv(input_filepath + "/Fake.csv")[:200]
-        true = pd.read_csv(input_filepath + "/True.csv")[:200]
+        fake = pd.read_csv(input_filepath + "/Fake.csv")[:5]
+        true = pd.read_csv(input_filepath + "/True.csv")[:5]
         print("small test set enabled! size:" + str(len(fake) * 2))
         fake["target"] = 0  # Fake
         true["target"] = 1  # True
@@ -63,21 +64,22 @@ def read_data(input_filepath):
         df = pd.concat([true, fake])
     return df
 
+
 def read_data_imdb(input_filepath):
     """Read data from raw. returns as pandas dataframe"""
-    df=pd.read_csv(input_filepath + '/IMDB Dataset.csv')
-    df.sentiment.replace({'positive': 1, 'negative': 0},inplace=True)
-    df.rename(columns={'sentiment': 'target','review': 'text'},inplace=True)
+    df = pd.read_csv(input_filepath + "/IMDB Dataset.csv")
+    df.sentiment.replace({"positive": 1, "negative": 0}, inplace=True)
+    df.rename(columns={"sentiment": "target", "review": "text"}, inplace=True)
 
-    TAG_RE = re.compile(r'<[^>]+>')
+    TAG_RE = re.compile(r"<[^>]+>")
 
     def remove_tags(text):
-        return TAG_RE.sub('', text)
+        return TAG_RE.sub("", text)
 
-    df['text']=df['text'].apply(lambda x: remove_tags(x))
+    df["text"] = df["text"].apply(lambda x: remove_tags(x))
 
     if small_test:
-        df = df[:1000]
+        df = df[:5]
         print("small test set enabled! size: " + str(len(df)))
     else:
         df = df
@@ -103,7 +105,7 @@ def my_tokenize(X):
 
 def convert_to_torchdataset(
     train_encodings, test_encodings, eval_encodings, y_train, y_test, y_eval
-    ):
+):
     """Convert to PyTorch Datasets class"""
     train_set = TorchDataset(train_encodings, y_train.to_list())
     test_set = TorchDataset(test_encodings, y_test.to_list())

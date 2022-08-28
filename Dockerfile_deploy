@@ -1,0 +1,25 @@
+FROM pytorch/torchserve:0.5.0-cpu
+
+RUN pip install transformers==4.18.0
+
+ARG LATEST_MODEL
+RUN echo $LATEST_MODEL
+COPY src/models/model.py models/$LATEST_MODEL/pytorch_model.bin src/models/imdb_handler.py /home/model-server/
+
+USER root
+RUN printf "\nservice_envelope=json" >> /home/model-server/config.properties
+USER model-server
+
+RUN torch-model-archiver \
+    --model-name=model \
+    --version=1.0 \
+    --model-file=/home/model-server/model.py \
+    --serialized-file=/home/model-server/pytorch_model.bin \
+    --handler=/home/model-server/imdb_handler.py \
+    --export-path=/home/model-server/model-store
+
+CMD ["torchserve", \
+    "--start", \
+    "--ts-config=/home/model-server/config.properties", \
+    "--models", \
+    "model=model.mar"]
