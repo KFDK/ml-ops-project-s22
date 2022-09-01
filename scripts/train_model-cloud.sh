@@ -7,6 +7,9 @@ IMAGE_URI=gcr.io/better-mldtu/mlops_pytorch_custom_container:mlops_pytorch_gpu
 MODEL_DIR=pytorch_model_$(date +%Y%m%d_%H%M%S)
 JOB_NAME=custom_container_job_$(date +%Y%m%d_%H%M%S)
 
+docker build -f Dockerfile -t $IMAGE_URI ./ 
+docker push $IMAGE_URI
+
 gcloud ai-platform jobs submit training ${JOB_NAME} \
     --scale-tier BASIC_GPU \
     --region ${REGION} \

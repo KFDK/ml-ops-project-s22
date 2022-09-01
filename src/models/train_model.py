@@ -49,7 +49,10 @@ from google.cloud import storage
 from google.cloud import secretmanager
 
 # import model
-from src.models.model import ElectraClassifier
+from model import ElectraClassifier
+
+# profiling
+from torch.profiler import profile, record_function, ProfilerActivity
 
 
 class TorchDataset(torch.utils.data.Dataset):
@@ -97,7 +100,6 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
     with torch.no_grad():
         for d in data_loader:
             input_ids = d["input_ids"].to(device)
-            pdb.set_trace
             attention_mask = d["attention_mask"].to(device)
             targets = d["labels"].to(device)
             outputs = model(input_ids=input_ids, attention_mask=attention_mask)
@@ -128,7 +130,6 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
     losses = []
     correct_predictions = 0
     for d in data_loader:
-        pdb.set_trace()
         input_ids = d["input_ids"].to(device)
         attention_mask = d["attention_mask"].to(device)
         targets = d["labels"].to(device)
@@ -179,34 +180,37 @@ def train(config=None):
         best_accuracy = 0
         time = datetime.now().strftime("%Y%m%d_%H%M%S")
         print(time)
-        for epoch in tqdm(range(EPOCHS)):
-            train_acc, train_loss = train_epoch(
-                model,
-                train_dataloader,
-                loss_fn,
-                optimizer,
-                device,
-                scheduler,
-                len(train_dataset),
-            )
+        with profile(activities=[ProfilerActivity.CPU], record_shapes=True) as prof:
+            with record_function("model_inference"):
+                for epoch in tqdm(range(EPOCHS)):
+                    train_acc, train_loss = train_epoch(
+                        model,
+                        train_dataloader,
+                        loss_fn,
+                        optimizer,
+                        device,
+                        scheduler,
+                        len(train_dataset),
+                    )
 
-            val_acc, val_loss = eval_model(
-                model, eval_dataloader, loss_fn, device, len(eval_dataset)
-            )
+                    val_acc, val_loss = eval_model(
+                        model, eval_dataloader, loss_fn, device, len(eval_dataset)
+                    )
 
-            wandb.log(
-                {
-                    "Training_loss": train_loss,
-                    "Validation_loss": val_loss,
-                    "Training_accuracy": train_acc,
-                    "Validation_accuracy": val_acc,
-                }
-            )
+                    wandb.log(
+                        {
+                            "Training_loss": train_loss,
+                            "Validation_loss": val_loss,
+                            "Training_accuracy": train_acc,
+                            "Validation_accuracy": val_acc,
+                        }
+                    )
 
-            if val_acc > best_accuracy:
-                best_accuracy = val_acc
-                if not configs_train.hyperparameters.sweeping:
-                    save_model(model, time)
+                    if val_acc > best_accuracy:
+                        best_accuracy = val_acc
+                        if not configs_train.hyperparameters.sweeping:
+                            save_model(model, time)
+        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
 
 
 def get_secret():
@@ -278,4 +282,5 @@ if __name__ == "__main__":
     else:
         wandb.agent(sweep_id, function=train, count=1)
     # wandb.watch(model, log_freq=100)
+
     print("done!")

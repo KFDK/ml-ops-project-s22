@@ -79,7 +79,7 @@ def read_data_imdb(input_filepath):
     df["text"] = df["text"].apply(lambda x: remove_tags(x))
 
     if small_test:
-        df = df[:5]
+        df = df[:100]
         print("small test set enabled! size: " + str(len(df)))
     else:
         df = df

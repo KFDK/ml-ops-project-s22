@@ -89,6 +89,8 @@ def get_predictions(model, data_loader):
     real_values = []
     with torch.no_grad():
         for d in data_loader:
+            mytest = [101, 2023, 2001, 1037, 2200, 2200, 2919, 3185, 102]
+
             input_ids = d["input_ids"].to(device)
             attention_mask = d["attention_mask"].to(device)
             targets = d["labels"].to(device)
