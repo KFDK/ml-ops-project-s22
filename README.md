@@ -19,7 +19,7 @@ The following plot shows the obtained confusion matrix from the test set.
 
 Insert plot here boii
 
-The project uses cookie-cutter structure to standardize the repository structure. Furthermore the project uses Data Version Control (DVC) to keep track of large files when stored on remote locations. Due to the computational cost the model is trained using Google Cloud Project. WandB is used to for experimental logging. The project is pep8 compliant.
+The project uses cookie-cutter structure to standardize the repository structure. Furthermore the project uses Data Version Control ('DVC') to keep track of large files when stored on remote locations. Due to the computational cost the model is trained using Google Cloud Project. WandB is used to for experimental logging. The project is pep8 compliant.
 
 Authors, <br>
 Kelvin Foster – s????? <br>
