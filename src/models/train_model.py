@@ -1,58 +1,30 @@
 """ 
 This script trains the model.
-
 config file: train.yaml
 """
-import pdb
+# import pdb
 
 # Misc
-# from select import EPOLLEXCLUSIVE
 import numpy as np
 from tqdm.auto import tqdm
 from datetime import datetime
-
-# deep learning / pytorch
+import os
+import wandb
 import torch
-from torch import nn, optim
+from torch import nn
 from transformers import (
     set_seed,
     AutoTokenizer,
     AdamW,
     get_linear_schedule_with_warmup,
-)
-from transformers import (
-    AdamW,
-    GPT2Config,
-    GPT2ForSequenceClassification,
-    set_seed,
-    get_scheduler,
     WEIGHTS_NAME,
-    CONFIG_NAME,
-)
-
-import torch.nn.functional as F
+    ElectraModel)
+from torch.profiler import profile, record_function, ProfilerActivity
 from torch.utils.data import DataLoader
-
-# import pdb
-from transformers import ElectraModel, AutoTokenizer
-import torch
-from torch import nn
-
 from omegaconf import OmegaConf
-
-import wandb
-from google.cloud import secretmanager
-import os
-
-# import gcsfs
 from google.cloud import storage
 from google.cloud import secretmanager
-
-# import model
 from model import ElectraClassifier
-
-# profiling
-from torch.profiler import profile, record_function, ProfilerActivity
 
 
 class TorchDataset(torch.utils.data.Dataset):
@@ -281,6 +253,5 @@ if __name__ == "__main__":
         wandb.agent(sweep_id, function=train, count=10)
     else:
         wandb.agent(sweep_id, function=train, count=1)
-    # wandb.watch(model, log_freq=100)
 
     print("done!")
