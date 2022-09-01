@@ -27,10 +27,10 @@ Lasse Hansen  -s154446<br>
 Magnus Mortensen – s????<br>
 <br>
 
-⊂_ヽ<br>
-　 ＼＼<br>
-　　 ＼( ͡° ͜ʖ ͡°)<br>
-　　　 >　⌒ヽ<br>
+⊂_ヽ                                                    Authers,<br>
+　 ＼＼                                                  Kelvin Foster – s?????<br>
+　　 ＼( ͡° ͜ʖ ͡°)                                         Lasse Hansen  -s154446<br>
+　　　 >　⌒ヽ                                             Magnus Mortensen – s????<br>
 　　　/ 　 へ＼<br>
 　　 /　　/　＼＼<br>
 　　 ﾚ　ノ　　 ヽ_つ<br>
