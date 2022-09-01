@@ -2,9 +2,7 @@
 This script trains the model.
 config file: train.yaml
 """
-# import pdb
 
-# Misc
 import numpy as np
 from tqdm.auto import tqdm
 from datetime import datetime
