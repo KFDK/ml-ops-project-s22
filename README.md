@@ -25,23 +25,6 @@ Authors, <br>
 Kelvin Foster – s????? <br>
 Lasse Hansen  -s154446<br>
 Magnus Mortensen – s????<br>
-<br>
-
-⊂_ヽ                                                    Authers,<br>
-　 ＼＼                                                  Kelvin Foster – s?????<br>
-　　 ＼( ͡° ͜ʖ ͡°)                                         Lasse Hansen  -s154446<br>
-　　　 >　⌒ヽ                                             Magnus Mortensen – s????<br>
-　　　/ 　 へ＼<br>
-　　 /　　/　＼＼<br>
-　　 ﾚ　ノ　　 ヽ_つ<br>
-　　/　/<br>
-　 /　/|<br>
-　(　(ヽ<br>
-　|　|、＼<br>
-　| 丿 ＼ ⌒)<br>
-　| |　　) /<br>
-ノ )　　Lﾉ<br>
-(_／<br>
 
 Project Organization
 ------------
@@ -94,4 +77,20 @@ Project Organization
 
 --------
 
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+<p><small>
+⊂_ヽ<br>
+　 ＼＼<br>
+　　 ＼( ͡° ͜ʖ ͡°)<br>
+　　　 >　⌒ヽ<br>
+　　　/ 　 へ＼<br>
+　　 /　　/　＼＼<br>
+　　 ﾚ　ノ　　 ヽ_つ<br>
+　　/　/<br>
+　 /　/|<br>
+　(　(ヽ<br>
+　|　|、＼<br>
+　| 丿 ＼ ⌒)<br>
+　| |　　) /<br>
+ノ )　　Lﾉ<br>
+(_／<br>
+</small></p>
