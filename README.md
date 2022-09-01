@@ -11,8 +11,7 @@ The dataset contains of 49582 reviews in the form of texts. The reviews are bina
 - testing: 30 % 
 - validation: 10 % 
 
-The model used in this project is the pre-trained transformer model Electra from <a https://huggingface.co/docs/transformers/model_doc/electra="url">huggingface.</a>. 
-
+The model used in this project is the pre-trained transformer model Electra from <a href="https://huggingface.co/docs/transformers/model_doc/electra">huggingface</a>
 We obtained an macro F1 score of ???
 
 The following plot shows the obtained confusion matrix from the test set.
