@@ -1,4 +1,4 @@
-""" 
+"""
 This script trains the model.
 config file: train.yaml
 """
@@ -44,6 +44,7 @@ class TorchDataset(torch.utils.data.Dataset):
 
 
 def load_model(device):
+    """ Loads model from huggingface """
     model = ElectraModel.from_pretrained(
         pretrained_model_name_or_path="google/electra-small-discriminator",
         num_labels=2,
@@ -54,7 +55,7 @@ def load_model(device):
 
 
 def my_tokenize(X):
-    # Tokenize with electra. Input list of texts
+    """ Tokenize text. Input: str. output: attentionmask and ids """
     electra_huggingface = "google/electra-small-discriminator"
     tokenizer = AutoTokenizer.from_pretrained(electra_huggingface)
     tokenizer.padding_side = "left"
@@ -64,6 +65,7 @@ def my_tokenize(X):
 
 
 def eval_model(model, data_loader, loss_fn, device, n_examples):
+    """ Evaluate model """
     model = model.eval()
     losses = []
     correct_predictions = 0
@@ -81,6 +83,7 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
 
 
 def save_model(model, time):
+    """ Saves model to google bucket """
     folder = "models/"
     save_path = folder + time
     os.mkdir(save_path)
@@ -123,7 +126,7 @@ def train(config=None):
         model = ElectraClassifier()
         model = model.to(device)
 
-        # freze electra
+        # frezes electra
         for p in model.electra.parameters():
             p.requires_grad = False
 
