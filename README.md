@@ -3,7 +3,7 @@ ml-ops-project-s22
 
 This is an exam project for the DTU course Machine Learning Operations – 02476.
 
-This project is about classifying IMDb reviews as negative or positive using the following kaggle dataset: https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews
+This project is about classifying IMDb reviews as negative or positive using the following <a href="https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews">dataset</a>
 
 The dataset contains of 49582 reviews in the form of texts. The reviews are binary annotated with either negative or positive. The dataset where furthermore divided into a traingset, testset and a validationset.
 
@@ -12,6 +12,7 @@ The dataset contains of 49582 reviews in the form of texts. The reviews are bina
 - validation: 10 % 
 
 The model used in this project is the pre-trained transformer model Electra from <a href="https://huggingface.co/docs/transformers/model_doc/electra">huggingface</a>
+
 We obtained an macro F1 score of ???
 
 The following plot shows the obtained confusion matrix from the test set.
@@ -20,27 +21,27 @@ Insert plot here boii
 
 The project uses cookie-cutter structure to standardize the repository structure. Furthermore the project uses Data Version Control (DVC) to keep track of large files when stored on remote locations. Due to the computational cost experiments the model is trained using Google Cloud Project. WandB is used to for experimental logging. The project is pep8 compliant.
 
-Authors, 
-Kelvin Foster – s?????
-Lasse Hansen  -s154446
-Magnus Mortensen – s????
+Authors, <br>
+Kelvin Foster – s????? <br>
+Lasse Hansen  -s154446<br>
+Magnus Mortensen – s????<br>
+<br>
 
-
-⊂_ヽ
-　 ＼＼
-　　 ＼( ͡° ͜ʖ ͡°)
-　　　 >　⌒ヽ
-　　　/ 　 へ＼
-　　 /　　/　＼＼
-　　 ﾚ　ノ　　 ヽ_つ
-　　/　/
-　 /　/|
-　(　(ヽ
-　|　|、＼
-　| 丿 ＼ ⌒)
-　| |　　) /
-ノ )　　Lﾉ
-(_／
+⊂_ヽ<br>
+　 ＼＼<br>
+　　 ＼( ͡° ͜ʖ ͡°)<br>
+　　　 >　⌒ヽ<br>
+　　　/ 　 へ＼<br>
+　　 /　　/　＼＼<br>
+　　 ﾚ　ノ　　 ヽ_つ<br>
+　　/　/<br>
+　 /　/|<br>
+　(　(ヽ<br>
+　|　|、＼<br>
+　| 丿 ＼ ⌒)<br>
+　| |　　) /<br>
+ノ )　　Lﾉ<br>
+(_／<br>
 
 Project Organization
 ------------
