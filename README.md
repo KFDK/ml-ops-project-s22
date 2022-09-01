@@ -22,9 +22,9 @@ Insert plot here boii
 The project uses `cookie-cutter` structure to standardize the repository structure. Furthermore the project uses Data Version Control `DVC` to keep track of large files when stored on remote locations. Due to the computational cost the model is trained using `Google Cloud Project`. `WandB` is used for experimental logging. The project is `pep8` compliant.
 
 Authors, <br>
-Kelvin Foster – s????? <br>
-Lasse Hansen  -s154446<br>
-Magnus Mortensen – s????<br>
+Kelvin Foster -s174210<br>
+Lasse Hansen -s154446<br>
+Magnus Mortensen -s164814<br>
 
 Project Organization
 ------------
