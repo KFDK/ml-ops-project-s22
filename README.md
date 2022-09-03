@@ -3,7 +3,7 @@ ml-ops-project-s22
 
 This is an exam project for the DTU course Machine Learning Operations – 02476.
 
-This project is about classifying IMDb reviews as negative or positive using the following <a href="https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews">dataset</a>
+This project is about classifying IMDb reviews as negative or positive using the following <a href="https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews">dataset</a> from kaggle.
 
 The dataset contains of 49582 reviews in the form of texts. The reviews are binary annotated with either negative or positive. The dataset where furthermore divided into a traingset, testset and a validationset.
 
@@ -11,7 +11,7 @@ The dataset contains of 49582 reviews in the form of texts. The reviews are bina
 - testing: 30 % 
 - validation: 10 % 
 
-The model used in this project is the pre-trained transformer model Electra from <a href="https://huggingface.co/docs/transformers/model_doc/electra">huggingface</a>
+The model used in this project is the pre-trained transformer model Electra from <a href="https://huggingface.co/docs/transformers/model_doc/electra">huggingface</a>.
 
 We obtained a macro F1 score of ???
 
