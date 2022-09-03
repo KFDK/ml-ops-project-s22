@@ -47,4 +47,4 @@ model.deploy(
     sync=sync,
 )
 
-model.wait()
+# model.wait()

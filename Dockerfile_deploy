@@ -8,6 +8,7 @@ COPY src/models/model.py models/$LATEST_MODEL/pytorch_model.bin src/models/imdb_
 
 USER root
 RUN printf "\nservice_envelope=json" >> /home/model-server/config.properties
+RUN cat /home/model-server/config.properties
 USER model-server
 
 RUN torch-model-archiver \
