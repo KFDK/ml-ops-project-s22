@@ -8,7 +8,13 @@ COPY src/models/model.py models/$LATEST_MODEL/pytorch_model.bin src/models/imdb_
 
 USER root
 RUN printf "\nservice_envelope=json" >> /home/model-server/config.properties
+RUN printf "\ninference_address=http://0.0.0.0:8080" >> /home/model-server/config.properties
+RUN printf "\nmanagement_address=http://0.0.0.0:8081" >> /home/model-server/config.properties
+RUN cat /home/model-server/config.properties
 USER model-server
+
+EXPOSE 8080
+EXPOSE 8081
 
 RUN torch-model-archiver \
     --model-name=model \
