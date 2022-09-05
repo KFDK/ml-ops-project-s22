@@ -16,13 +16,14 @@ from transformers import (
     AdamW,
     get_linear_schedule_with_warmup,
     WEIGHTS_NAME,
-    ElectraModel)
+    ElectraModel,
+)
 from torch.profiler import profile, record_function, ProfilerActivity
 from torch.utils.data import DataLoader
 from omegaconf import OmegaConf
 from google.cloud import storage
 from google.cloud import secretmanager
-from model import ElectraClassifier
+from src.models.model import ElectraClassifier
 
 
 class TorchDataset(torch.utils.data.Dataset):
@@ -44,7 +45,7 @@ class TorchDataset(torch.utils.data.Dataset):
 
 
 def load_model(device):
-    """ Loads model from huggingface """
+    """Loads model from huggingface"""
     model = ElectraModel.from_pretrained(
         pretrained_model_name_or_path="google/electra-small-discriminator",
         num_labels=2,
@@ -55,7 +56,7 @@ def load_model(device):
 
 
 def my_tokenize(X):
-    """ Tokenize text. Input: str. output: attentionmask and ids """
+    """Tokenize text. Input: str. output: attentionmask and ids"""
     electra_huggingface = "google/electra-small-discriminator"
     tokenizer = AutoTokenizer.from_pretrained(electra_huggingface)
     tokenizer.padding_side = "left"
@@ -65,7 +66,7 @@ def my_tokenize(X):
 
 
 def eval_model(model, data_loader, loss_fn, device, n_examples):
-    """ Evaluate model """
+    """Evaluate model"""
     model = model.eval()
     losses = []
     correct_predictions = 0
@@ -83,10 +84,11 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
 
 
 def save_model(model, time):
-    """ Saves model to google bucket """
+    """Saves model to google bucket"""
     folder = "models/"
     save_path = folder + time
-    os.mkdir(save_path)
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
 
     # save locally
     torch.save(model.state_dict(), os.path.join(save_path, WEIGHTS_NAME))
@@ -134,14 +136,14 @@ def train(config=None):
 
         config = wandb.config
 
-        if configs_train.hyperparameters.sweeping:
-            batch = config.batch_size
-            learning_rate = config.learning_rate
-            optimizer_algorithm = config.optimizer_algorithm
-        else:
-            batch = configs_train.hyperparameters.batch_size
-            learning_rate = configs_train.hyperparameters.learning_rate
-            optimizer_algorithm = configs_train.hyperparameters.optimizer_algorithm
+        # if configs_train.hyperparameters.sweeping:
+        batch = config.batch_size
+        learning_rate = config.learning_rate
+        optimizer_algorithm = config.optimizer_algorithm
+        # else:
+        #     batch = configs_train.hyperparameters.batch_size
+        #     learning_rate = configs_train.hyperparameters.learning_rate
+        #     optimizer_algorithm = configs_train.hyperparameters.optimizer_algorithm
 
         train_dataloader = DataLoader(train_dataset, batch_size=batch)
         eval_dataloader = DataLoader(eval_dataset, batch_size=batch)
@@ -153,37 +155,35 @@ def train(config=None):
         best_accuracy = 0
         time = datetime.now().strftime("%Y%m%d_%H%M%S")
         print(time)
-        with profile(activities=[ProfilerActivity.CPU], record_shapes=True) as prof:
-            with record_function("model_inference"):
-                for epoch in tqdm(range(EPOCHS)):
-                    train_acc, train_loss = train_epoch(
-                        model,
-                        train_dataloader,
-                        loss_fn,
-                        optimizer,
-                        device,
-                        scheduler,
-                        len(train_dataset),
-                    )
 
-                    val_acc, val_loss = eval_model(
-                        model, eval_dataloader, loss_fn, device, len(eval_dataset)
-                    )
+        for epoch in tqdm(range(EPOCHS)):
+            train_acc, train_loss = train_epoch(
+                model,
+                train_dataloader,
+                loss_fn,
+                optimizer,
+                device,
+                scheduler,
+                len(train_dataset),
+            )
 
-                    wandb.log(
-                        {
-                            "Training_loss": train_loss,
-                            "Validation_loss": val_loss,
-                            "Training_accuracy": train_acc,
-                            "Validation_accuracy": val_acc,
-                        }
-                    )
+            val_acc, val_loss = eval_model(
+                model, eval_dataloader, loss_fn, device, len(eval_dataset)
+            )
 
-                    if val_acc > best_accuracy:
-                        best_accuracy = val_acc
-                        if not configs_train.hyperparameters.sweeping:
-                            save_model(model, time)
-        print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+            wandb.log(
+                {
+                    "Training_loss": train_loss,
+                    "Validation_loss": val_loss,
+                    "Training_accuracy": train_acc,
+                    "Validation_accuracy": val_acc,
+                }
+            )
+
+            if val_acc > best_accuracy:
+                best_accuracy = val_acc
+                if not configs_train.hyperparameters.sweeping:
+                    save_model(model, time)
 
 
 def get_secret():
@@ -236,6 +236,8 @@ if __name__ == "__main__":
 
     sweep_configuration = OmegaConf.load(config_path + "sweep.yaml")
     sweep_configuration = OmegaConf.to_container(sweep_configuration)
+    final_config = OmegaConf.load(config_path + "final_model.yaml")
+    final_config = OmegaConf.to_container(final_config)
     api_key = configs_secret.hyperparameters.wandb_api_key
     wandb.login(key=api_key)
 
@@ -249,10 +251,11 @@ if __name__ == "__main__":
     train_dataset = torch.load(data_output_filepath + "train_dataset.pt")
     eval_dataset = torch.load(data_output_filepath + "eval_dataset.pt")
 
-    sweep_id = wandb.sweep(sweep_configuration, project="mlops_wandb_project")
     if configs_train.hyperparameters.sweeping:
+        sweep_id = wandb.sweep(sweep_configuration, project="mlops_wandb_project")
         wandb.agent(sweep_id, function=train, count=10)
     else:
+        sweep_id = wandb.sweep(final_config, project="mlops_wandb_project")
         wandb.agent(sweep_id, function=train, count=1)
 
     print("done!")
