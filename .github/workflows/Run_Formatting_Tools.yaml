@@ -1,0 +1,26 @@
+name: "use formatting"
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.9
+        cache: 'pip'
+    - name: Install flake8
+      run: | 
+        pip install flake8 
+        pip install isort  
+    - name: using flake8 to check format
+      run: flake8 .
+    - name: using isort to check correct imports
+      run: isort .
