@@ -5,7 +5,7 @@ This is an exam project for the DTU course Machine Learning Operations – 02476
 
 This project is about classifying IMDb reviews as negative or positive using the following <a href="https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews">dataset</a> from kaggle.
 
-The dataset contains of 49582 reviews in the form of texts. The reviews are binary annotated with either negative or positive. The dataset where furthermore divided into a traingset, testset and a validationset.
+The dataset contains of 49582 reviews in the form of texts. The reviews are binary annotated with either negative or positive. The dataset is divided into a traingset, testset and a validationset.
 
 - training: 60 % 
 - testing: 30 % 

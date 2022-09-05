@@ -8,6 +8,7 @@ config file: predict.yaml
 import numpy as np
 from collections import defaultdict
 import pdb
+import json
 
 # Sklearn
 from sklearn.metrics import f1_score
@@ -111,13 +112,12 @@ def load_model(model_name):
     """Loads model from path from GC bucket"""
     client = storage.Client()
     bucket = client.get_bucket("better-mldtu-aiplatform")
-    blob = bucket.blob("models/" + model_name + ".pt")
-    model_string = blob.download_as_string()
-    weights = io.BytesIO(model_string)
-    prams = torch.load(
-        weights, map_location=torch.device("cpu")
-    )  # Remove if running on GPU
-    return prams
+    blob = bucket.blob("models/" + model_name + ".bin")
+    blob.download_to_filename('model_test.bin')
+    model = ElectraClassifier()
+    weights = torch.load('model_test.bin')
+    # pdb.set_trace()
+    return model
 
 
 def get_classification_report(predections, true):
@@ -134,10 +134,10 @@ def get_confusion_matrix(predictions, true):
 if __name__ == "__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     data_output_filepath = "data/processed/"
-    model = load_model("model_test")
-
+    model = load_model("20220829_115755/pytorch_model")
+    print(type(model))
     test_dataset = torch.load(data_output_filepath + "test_dataset.pt")
-    test_dataloader = DataLoader(test_dataset, batch_size=200)
+    test_dataloader = DataLoader(test_dataset, batch_size=20)
 
     print("getting predections")
     predictions, prediction_probs, real_values = get_predictions(model, test_dataloader)

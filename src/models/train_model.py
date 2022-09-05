@@ -23,7 +23,7 @@ from torch.utils.data import DataLoader
 from omegaconf import OmegaConf
 from google.cloud import storage
 from google.cloud import secretmanager
-from model import ElectraClassifier
+from src.models.model import ElectraClassifier
 
 
 class TorchDataset(torch.utils.data.Dataset):
