@@ -13,7 +13,7 @@ The dataset contains of 49582 reviews in the form of texts. The reviews are bina
 
 The model used in this project is the pre-trained transformer model Electra from <a href="https://huggingface.co/docs/transformers/model_doc/electra">huggingface</a>.
 
-We obtained a macro F1 score of ???
+We obtained a macro F1 score of 0.75
 
 The following plot shows the obtained confusion matrix from the testset.
 
