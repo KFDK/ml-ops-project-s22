@@ -108,19 +108,18 @@ def get_predictions(model, data_loader):
     predictions = torch.stack(predictions).cpu()
     prediction_probs = torch.stack(prediction_probs).cpu()
     real_values = torch.stack(real_values).cpu()
-    
+
     return predictions, prediction_probs, real_values
 
 
-def load_model(model_name,device):
+def load_model(model_name, device):
     """Loads model from path from GC bucket"""
     client = storage.Client()
     bucket = client.get_bucket("better-mldtu-aiplatform")
     blob = bucket.blob("models/" + model_name + ".bin")
-    blob.download_to_filename('model_test.bin')
+    blob.download_to_filename("model_test.bin")
     model = ElectraClassifier()
-    weights = torch.load('model_test.bin',map_location =device)
-    # pdb.set_trace()
+    model.load_state_dict(torch.load("model_test.bin", map_location=device))
     return model
 
 
@@ -129,35 +128,41 @@ def get_classification_report(predections, true):
     report = classification_report(predections, true, digits=4)
     print(report)
 
-    clsf_report = pd.DataFrame(classification_report(y_true = true, y_pred = predections, output_dict=True)).transpose()
-    clsf_report.to_csv('Classification_report.csv', index= True)
+    clsf_report = pd.DataFrame(
+        classification_report(y_true=true, y_pred=predections, output_dict=True)
+    ).transpose()
+    clsf_report.to_csv("Classification_report.csv", index=True)
 
 
 def get_confusion_matrix(predictions, true):
     """creates confussion matrix"""
     cm = confusion_matrix(predictions, true)
     print(cm)
-    df_cm=pd.DataFrame(cm,index=['Positive','Negative'],columns=['Positive','Negative'])
-    
+    df_cm = pd.DataFrame(
+        cm, index=["Positive", "Negative"], columns=["Positive", "Negative"]
+    )
+
     hmap = sns.heatmap(df_cm, annot=True, fmt="d", cmap="Blues")
-    hmap.yaxis.set_ticklabels(hmap.yaxis.get_ticklabels(), rotation=0, ha='right')
-    hmap.xaxis.set_ticklabels(hmap.xaxis.get_ticklabels(), rotation=30, ha='right')
-    plt.ylabel('True')
-    plt.xlabel('Predicted')
-    plt.savefig('cm.png')
+    hmap.yaxis.set_ticklabels(hmap.yaxis.get_ticklabels(), rotation=0, ha="right")
+    hmap.xaxis.set_ticklabels(hmap.xaxis.get_ticklabels(), rotation=30, ha="right")
+    plt.ylabel("True")
+    plt.xlabel("Predicted")
+    plt.savefig("cm.png")
 
 
 if __name__ == "__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     data_output_filepath = "data/processed/"
-    model = load_model("20220905_083737/pytorch_model",device)
+    model = load_model("20220905_140220/pytorch_model", device)
     print(type(model))
-    test_dataset = torch.load(data_output_filepath + "test_dataset.pt",map_location =device)
+    test_dataset = torch.load(
+        data_output_filepath + "test_dataset.pt", map_location=device
+    )
 
     test_dataloader = DataLoader(test_dataset, batch_size=200)
 
-    print('Len of data: '+str(len(test_dataset)))
+    print("Len of data: " + str(len(test_dataset)))
     print("getting predections..")
     predictions, prediction_probs, real_values = get_predictions(model, test_dataloader)
 
