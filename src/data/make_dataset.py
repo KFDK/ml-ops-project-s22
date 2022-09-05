@@ -97,7 +97,6 @@ def split_data(df):
 
 def my_tokenize(X):
     """Tokenize with electra. Input list of texts"""
-    pdb.set_trace()
     if isinstance(X,str):
         if (not (X and not X.isspace())):
             raise ValueError("the input string cannot be empty")
