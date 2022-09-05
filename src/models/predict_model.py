@@ -1,14 +1,10 @@
-""" 
+"""
 This script loads a model and evalutes that model.
 
 config file: predict.yaml
 """
 # Misc
 # from select import EPOLLEXCLUSIVE
-import numpy as np
-from collections import defaultdict
-import pdb
-import json
 import pandas as pd
 from tqdm.auto import tqdm
 
@@ -16,20 +12,17 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Sklearn
-from sklearn.metrics import f1_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 
 # deep learning / pytorch
 import torch
-from torch import nn, optim
 from transformers import ElectraModel
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from torch import nn
 from omegaconf import OmegaConf
 from google.cloud import storage
-import io
 
 # Hyperparameters extracted
 config_path = "./configs/"
@@ -88,7 +81,8 @@ class TorchDataset(torch.utils.data.Dataset):
 
 
 def get_predictions(model, data_loader):
-    """Computes predections and predection probabilities with input model and dateloader"""
+    """Computes predections and predection
+    probabilities with input model and dateloader"""
     model = model.eval()
     predictions = []
     prediction_probs = []

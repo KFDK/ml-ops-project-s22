@@ -1,14 +1,13 @@
-""" 
-This script converts raw data into tokenized text using google electra. 
+"""
+This script converts raw data into tokenized text using google electra.
 It returns and saves a torch dataset object to ./data/processed/
 """
 
 # -*- coding: utf-8 -*-
 # import click
-from errno import EMULTIHOP
+
 import logging
 from pathlib import Path
-import pdb
 from dotenv import find_dotenv, load_dotenv
 import torch
 from transformers import AutoTokenizer
@@ -97,8 +96,8 @@ def split_data(df):
 
 def my_tokenize(X):
     """Tokenize with electra. Input list of texts"""
-    if isinstance(X,str):
-        if (not (X and not X.isspace())):
+    if isinstance(X, str):
+        if not (X and not X.isspace()):
             raise ValueError("the input string cannot be empty")
     elif type(X) is list:
         if len(X) == 0:

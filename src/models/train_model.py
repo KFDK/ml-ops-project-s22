@@ -19,7 +19,6 @@ from transformers import (
     WEIGHTS_NAME,
     ElectraModel,
 )
-from torch.profiler import profile, record_function, ProfilerActivity
 from torch.utils.data import DataLoader
 from omegaconf import OmegaConf
 from google.cloud import storage

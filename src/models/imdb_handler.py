@@ -22,10 +22,13 @@ def my_tokenize(X):
 
 class IMDBelectraClassifier(BaseHandler):
     """
-    IMDBelectraClassifier handler class. This handler extends class ElectraClassifier from model.py, a
-    default handler. This handler takes a IMDB review as .txt and returns if review is positive or negative.
+    IMDBelectraClassifier handler class. This handler extends class
+    ElectraClassifier from model.py, a default handler.
+    This handler takes a IMDB review as .txt
+    and returns if review is positive or negative.
 
-    Here method postprocess() has been overridden while others are reused from parent class.
+    Here method postprocess()
+    has been overridden while others are reused from parent class.
     """
 
     def __init__(self):
@@ -81,7 +84,6 @@ class IMDBelectraClassifier(BaseHandler):
         return encoded_data, data
 
     def inference(self, inputs):
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         data = inputs[0]
         logger.info(data["input_ids"])
         df_ids = pd.DataFrame(data["input_ids"], columns=["input_ids"])
@@ -98,8 +100,8 @@ class IMDBelectraClassifier(BaseHandler):
         """The post process of MNIST converts the predicted output response to a label.
 
         Args:
-            data (list): The predicted output from the Inference with probabilities is passed
-            to the post-process function
+            data (list): The predicted output from the Inference
+            with probabilities is passed to the post-process function
         Returns:
             list : A list of dictionary with predictons and explanations are returned.
         """
