@@ -2,6 +2,7 @@
 This script trains the model.
 config file: train.yaml
 """
+import pdb
 
 import numpy as np
 from tqdm.auto import tqdm
@@ -109,6 +110,7 @@ def train_epoch(model, data_loader, loss_fn, optimizer, device, scheduler, n_exa
         attention_mask = d["attention_mask"].to(device)
         targets = d["labels"].to(device)
         outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+        pdb.set_trace()
         _, preds = torch.max(outputs, dim=1)
         loss = loss_fn(outputs, targets)
         correct_predictions += torch.sum(preds == targets)
