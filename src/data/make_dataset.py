@@ -5,8 +5,10 @@ It returns and saves a torch dataset object to ./data/processed/
 
 # -*- coding: utf-8 -*-
 # import click
+from errno import EMULTIHOP
 import logging
 from pathlib import Path
+import pdb
 from dotenv import find_dotenv, load_dotenv
 import torch
 from transformers import AutoTokenizer
@@ -95,6 +97,13 @@ def split_data(df):
 
 def my_tokenize(X):
     """Tokenize with electra. Input list of texts"""
+    pdb.set_trace()
+    if isinstance(X,str):
+        if (not (X and not X.isspace())):
+            raise ValueError("the input string cannot be empty")
+    elif type(X) is list:
+        if len(X) == 0:
+            raise ValueError("the list of strings cannot be empty")
     electra_huggingface = "google/electra-small-discriminator"
     tokenizer = AutoTokenizer.from_pretrained(electra_huggingface)
     tokenizer.padding_side = "left"
