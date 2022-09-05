@@ -119,7 +119,7 @@ def load_model(model_name,device):
     blob = bucket.blob("models/" + model_name + ".bin")
     blob.download_to_filename('model_test.bin')
     model = ElectraClassifier()
-    weights = torch.load('model_test.bin',map_location =device)
+    model.load_state_dict(torch.load('model_test.bin',map_location = device))
     # pdb.set_trace()
     return model
 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     data_output_filepath = "data/processed/"
-    model = load_model("20220905_083737/pytorch_model",device)
+    model = load_model("20220905_140220/pytorch_model",device)
     print(type(model))
     test_dataset = torch.load(data_output_filepath + "test_dataset.pt",map_location =device)
 
